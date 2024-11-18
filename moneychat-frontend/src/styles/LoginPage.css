@@ -1,0 +1,80 @@
+.LoginPage_container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+    padding: 20px;
+}
+
+.LoginPage_subContainer {
+    background-color: #e6f2ff;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.LoginPage_subContainer h2 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.LoginPage_subContainer h5 {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.LoginPage_LoginForm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.LoginPage_Logininput {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.LoginPage_email,
+.LoginPage_password {
+    width: 95%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+.LoginPage_LoginBtn,
+.LoginPage_signupBtn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.LoginPage_LoginBtn {
+    background-color: #007bff;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.LoginPage_LoginBtn:hover {
+    background-color: #0056b3;
+}
+
+.LoginPage_signupBtn {
+    background-color: #28a745;
+    color: white;
+}
+
+.LoginPage_signupBtn:hover {
+    background-color: #218838;
+}
