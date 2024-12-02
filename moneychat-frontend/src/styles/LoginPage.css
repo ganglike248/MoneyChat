@@ -3,78 +3,103 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: #f0f0f0;
-    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 1.25rem;
 }
 
 .LoginPage_subContainer {
-    background-color: #e6f2ff;
+    background-color: white;
     width: 100%;
-    max-width: 400px;
-    border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 40px 20px;
+    max-width: 360px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    padding: 2.5rem 1.5rem;
     text-align: center;
 }
 
 .LoginPage_subContainer h2 {
-    color: #333;
-    margin-bottom: 10px;
+    color: #2d3748;
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
 }
 
 .LoginPage_subContainer h5 {
-    color: #666;
-    margin-bottom: 30px;
+    color: #718096;
+    margin-bottom: 2rem;
+    font-weight: 400;
+    font-size: 0.875rem;
 }
 
 .LoginPage_LoginForm {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 1rem;
     width: 100%;
 }
 
 .LoginPage_Logininput {
     width: 100%;
-    margin-bottom: 20px;
 }
 
-.LoginPage_email,
-.LoginPage_password {
-    width: 95%;
-    padding: 10px;
+.LoginPage_email{
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
+    outline: none;
+    box-sizing: border-box;
     margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    font-size: 16px;
+}
+
+.LoginPage_password {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.LoginPage_email:focus,
+.LoginPage_password:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
 }
 
 .LoginPage_LoginBtn,
 .LoginPage_signupBtn {
     width: 100%;
-    padding: 10px;
+    padding: 0.75rem;
     border: none;
-    border-radius: 10px;
-    font-size: 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.2s;
 }
 
 .LoginPage_LoginBtn {
-    background-color: #007bff;
+    background-color: #4299e1;
     color: white;
-    margin-bottom: 10px;
+    margin-bottom: 0.75rem;
 }
 
 .LoginPage_LoginBtn:hover {
-    background-color: #0056b3;
+    background-color: #3182ce;
+    transform: translateY(-1px);
 }
 
 .LoginPage_signupBtn {
-    background-color: #28a745;
+    background-color: #48bb78;
     color: white;
 }
 
 .LoginPage_signupBtn:hover {
-    background-color: #218838;
+    background-color: #38a169;
+    transform: translateY(-1px);
 }

@@ -123,67 +123,70 @@ async handleMonthExpenses() {
   this.updateChatbotState(message);
 }
 
-  async handleExpenseFeedback() {
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        this.updateChatbotState(this.createChatBotMessage(
-          "로그인이 필요한 서비스입니다."
-        ));
-        return;
-      }
-
-      const monthSummary = await this.calculateExpenseSummary('month');
-      console.log('Month summary:', monthSummary);
-
-      if (monthSummary.total === 0) {
-        this.updateChatbotState(this.createChatBotMessage(
-          "아직 이번 달 지출 내역이 없습니다."
-        ));
-        return;
-      }
-
-      const today = new Date();
-      const daysInMonth = today.getDate();
-      const dailyAverage = monthSummary.total / daysInMonth;
-
-      const requestData = {
-        total: monthSummary.total,
-        dailyAverage,
-        byCategory: monthSummary.byCategory,
-        daysInMonth
-      };
-      
-      console.log('Sending data to backend:', requestData);
-
-      const response = await fetch('http://localhost:3001/api/analyze-spending', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
-      });
-
-      console.log('Server response status:', response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Server response data:', data);
-
-      const feedbackMessage = this.createChatBotMessage(data.feedback);
-      this.updateChatbotState(feedbackMessage);
-
-    } catch (error) {
-      console.error("Error getting feedback:", error);
-      const errorMessage = this.createChatBotMessage(
-        "죄송합니다. 피드백을 생성하는 중 문제가 발생했어요. 다시 시도해주세요."
-      );
-      this.updateChatbotState(errorMessage);
+  // handleExpenseFeedback 메서드 수정
+async handleExpenseFeedback() {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      this.updateChatbotState(this.createChatBotMessage(
+        "로그인이 필요한 서비스입니다."
+      ));
+      return;
     }
+
+    const monthSummary = await this.calculateExpenseSummary('month');
+    console.log('Month summary:', monthSummary);
+
+    if (monthSummary.total === 0) {
+      this.updateChatbotState(this.createChatBotMessage(
+        "아직 이번 달 지출 내역이 없습니다."
+      ));
+      return;
+    }
+
+    const today = new Date();
+    const daysInMonth = today.getDate();
+    const dailyAverage = monthSummary.total / daysInMonth;
+
+    const requestData = {
+      total: monthSummary.total,
+      dailyAverage,
+      byCategory: monthSummary.byCategory,
+      daysInMonth
+    };
+
+    const response = await fetch('http://localhost:3001/api/analyze-spending', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // 줄바꿈 처리를 위한 텍스트 포매팅
+    const formattedFeedback = data.feedback
+      .split(/(?:\d+\.\s)/) // 숫자. 으로 시작하는 부분을 기준으로 분리
+      .filter(text => text.trim()) // 빈 문자열 제거
+      .map(text => text.trim()) // 각 부분 앞뒤 공백 제거
+      .join('\n\n'); // 줄바꿈으로 다시 연결
+
+    const feedbackMessage = this.createChatBotMessage(formattedFeedback);
+    this.updateChatbotState(feedbackMessage);
+
+  } catch (error) {
+    console.error("Error getting feedback:", error);
+    const errorMessage = this.createChatBotMessage(
+      "죄송합니다. 피드백을 생성하는 중 문제가 발생했어요. 다시 시도해주세요."
+    );
+    this.updateChatbotState(errorMessage);
   }
+}
 
   async calculateExpenseSummary(period) {
     const user = auth.currentUser;

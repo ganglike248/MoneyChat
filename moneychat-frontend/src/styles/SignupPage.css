@@ -3,64 +3,80 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: #f0f0f0;
-    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 1.25rem;
 }
 
 .SignupPage_subContainer {
-    background-color: #e6fff2;
+    background-color: white;
     width: 100%;
-    max-width: 400px;
-    border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 20px 20px;
+    max-width: 360px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    padding: 2.5rem 1.5rem;
     text-align: center;
 }
 
 .SignupPage_subContainer h2 {
-    color: #333;
-    margin-bottom: 20px;
+    color: #2d3748;
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+    font-weight: 600;
 }
 
 .SignupPage_form {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 1rem;
     width: 100%;
 }
 
 .SignupPage_input {
-    width: 95%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    font-size: 16px;
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.SignupPage_input:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
 }
 
 .SignupPage_button {
     width: 100%;
-    padding: 10px;
+    padding: 0.75rem;
     border: none;
-    border-radius: 10px;
-    font-size: 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
-    background-color: #28a745;
+    background-color: #48bb78;
     color: white;
-    transition: background-color 0.3s;
-    margin-bottom: 15px;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 .SignupPage_button:hover {
-    background-color: #218838;
+    background-color: #38a169;
+    transform: translateY(-1px);
 }
 
 .SignupPage_loginLink {
-    margin-top: 20px;
-    color: #007bff;
+    color: #4299e1;
     text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.2s;
+    display: inline-block;
+    padding: 0.5rem;
 }
 
 .SignupPage_loginLink:hover {
-    text-decoration: underline;
+    color: #3182ce;
+    text-decoration: none;
 }

@@ -84,10 +84,9 @@ ${Object.entries(byCategory)
                         .map(([category, amount]) => `  - ${category}: ${amount.toLocaleString()}원`)
                         .join('\n')}
 
-다음 사항을 포함하여 분석해주세요:
+다음 사항을 포함하여 간단히 각 주제에 대해 1~2줄 정도로 분석해주세요:
 1. 현재 지출 패턴의 특징
 2. 개선이 필요한 부분이 있다면 구체적인 제안
-3. 잘하고 있는 부분에 대한 격려
 `
             }
         ];
