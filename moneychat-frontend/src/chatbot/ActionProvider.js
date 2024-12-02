@@ -21,81 +21,85 @@ class ActionProvider {
   async handleMessage(message) {
     console.log("ActionProvider handling message:", message);
     try {
-      // GPT API를 통해 메시지 분석
-      const response = await fetch('http://localhost:3001/api/analyze-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message })
-      });
+        const response = await fetch('http://localhost:3001/api/analyze-message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message })
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-      const analysis = await response.json();
-      console.log("Message analysis:", analysis);
+        const analysis = await response.json();
+        console.log("Message analysis:", analysis);
 
-      if (analysis.hasExpense && analysis.amount && analysis.category) {
-        // 지출 정보 저장
-        await this.saveExpense(analysis.category, analysis.amount);
-        
-        // 지출 입력에 대한 응답
-        const responseMessage = this.createChatBotMessage(
-          `${analysis.category}에 ${analysis.amount.toLocaleString()}원을 지출하셨네요!\n${analysis.feedback}`
-        );
-        this.updateChatbotState(responseMessage);
+        if (analysis.hasExpense && analysis.amount && analysis.category) {
+            // 지출 정보 저장 (주제 포함)
+            await this.saveExpense(analysis.subject, analysis.category, analysis.amount);
+            
+            // 지출 입력에 대한 응답
+            const responseMessage = this.createChatBotMessage(
+                `${analysis.subject}(${analysis.category}) 항목에 ${analysis.amount.toLocaleString()}원을 지출하셨네요!\n${analysis.feedback}`
+            );
+            this.updateChatbotState(responseMessage);
 
-        // 지출 분석 제안
-        const analysisMessage = this.createChatBotMessage(
-          "지금까지의 지출 현황을 확인해보시겠어요?",
-          {
-            widget: "options",
-          }
-        );
-        this.updateChatbotState(analysisMessage);
-      } else {
-        // GPT가 생성한 응답 메시지 표시
-        const defaultMessage = this.createChatBotMessage(analysis.feedback);
-        this.updateChatbotState(defaultMessage);
-      }
+            // 지출 분석 제안
+            const analysisMessage = this.createChatBotMessage(
+                "지금까지의 지출 현황을 확인해보시겠어요?",
+                {
+                    widget: "options",
+                }
+            );
+            this.updateChatbotState(analysisMessage);
+        } else {
+            const defaultMessage = this.createChatBotMessage(analysis.feedback);
+            this.updateChatbotState(defaultMessage);
+        }
     } catch (error) {
-      console.error("Error in handleMessage:", error);
-      const errorMessage = this.createChatBotMessage(
-        "죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요."
-      );
-      this.updateChatbotState(errorMessage);
+        console.error("Error in handleMessage:", error);
+        const errorMessage = this.createChatBotMessage(
+            "죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요."
+        );
+        this.updateChatbotState(errorMessage);
     }
-  }
+}
 
-  async saveExpense(category, amount) {
+
+  async saveExpense(subject, category, amount) {
     const user = auth.currentUser;
     if (!user) return;
 
     const expenseData = {
-      category,
-      amount,
-      timestamp: Timestamp.now(),
+        subject,
+        category,
+        amount,
+        timestamp: Timestamp.now(),
     };
 
     const expensesRef = collection(db, 'expenses');
     const userDocRef = doc(expensesRef, user.uid);
     const userExpensesRef = collection(userDocRef, 'userExpenses');
     await addDoc(userExpensesRef, expenseData);
-  }
+}
 
   // ActionProvider.js의 handleTodayExpenses 메서드 수정
-async handleTodayExpenses() {
-  const summary = await this.calculateExpenseSummary('today');
-  const message = this.createChatBotMessage(
-    `오늘의 총 지출: ${summary.total.toLocaleString()}원\n` +
-    `카테고리별 지출:\n` +
-    `${Object.entries(summary.byCategory)
-      .map(([category, amount]) => `${category}: ${amount.toLocaleString()}원`)
-      .join('\n')}`
-  );
-  this.updateChatbotState(message);
+  async handleTodayExpenses() {
+    const summary = await this.calculateExpenseSummary('today');
+    const message = this.createChatBotMessage(
+        `오늘의 총 지출: ${summary.total.toLocaleString()}원\n\n` +
+        `카테고리별 지출:\n` +
+        `${Object.entries(summary.byCategory)
+            .map(([category, amount]) => `${category}: ${amount.toLocaleString()}원`)
+            .join('\n')}\n\n` +
+        `상세 지출:\n` +
+        `${Object.entries(summary.bySubject)
+            .map(([subject, amount]) => `${subject}: ${amount.toLocaleString()}원`)
+            .join('\n')}`
+    );
+    this.updateChatbotState(message);
 }
 
 // handleWeekExpenses와 handleMonthExpenses도 같은 방식으로 수정
@@ -188,39 +192,41 @@ async handleExpenseFeedback() {
   }
 }
 
-  async calculateExpenseSummary(period) {
-    const user = auth.currentUser;
-    if (!user) return { total: 0, byCategory: {} };
+async calculateExpenseSummary(period) {
+  const user = auth.currentUser;
+  if (!user) return { total: 0, byCategory: {}, bySubject: {} };
 
-    const userDocRef = doc(db, 'expenses', user.uid);
-    const userExpensesRef = collection(userDocRef, 'userExpenses');
-    
-    let startDate = new Date();
-    if (period === 'today') {
+  const userDocRef = doc(db, 'expenses', user.uid);
+  const userExpensesRef = collection(userDocRef, 'userExpenses');
+  
+  let startDate = new Date();
+  if (period === 'today') {
       startDate.setHours(0, 0, 0, 0);
-    } else if (period === 'week') {
+  } else if (period === 'week') {
       const dayOfWeek = startDate.getDay();
       startDate.setDate(startDate.getDate() - dayOfWeek);
       startDate.setHours(0, 0, 0, 0);
-    } else if (period === 'month') {
+  } else if (period === 'month') {
       startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    }
+  }
 
-    const startTimestamp = Timestamp.fromDate(startDate);
-    const q = query(userExpensesRef, where('timestamp', '>=', startTimestamp));
-    const snapshot = await getDocs(q);
+  const startTimestamp = Timestamp.fromDate(startDate);
+  const q = query(userExpensesRef, where('timestamp', '>=', startTimestamp));
+  const snapshot = await getDocs(q);
 
-    let total = 0;
-    const byCategory = {};
+  let total = 0;
+  const byCategory = {};
+  const bySubject = {};
 
-    snapshot.forEach((doc) => {
+  snapshot.forEach((doc) => {
       const data = doc.data();
       total += data.amount;
       byCategory[data.category] = (byCategory[data.category] || 0) + data.amount;
-    });
+      bySubject[data.subject] = (bySubject[data.subject] || 0) + data.amount;
+  });
 
-    return { total, byCategory };
-  }
+  return { total, byCategory, bySubject };
+}
 
   updateChatbotState(message) {
     this.setState((prevState) => ({
