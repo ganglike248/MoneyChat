@@ -4,6 +4,8 @@ const OpenAI = require('openai');
 require('dotenv').config();
 
 const app = express();
+
+// 미들웨어 설정
 app.use(cors({
     origin: ['https://moneychat-3155a.web.app', 'http://localhost:3000'],
     methods: ['GET', 'POST'],
@@ -11,6 +13,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// 헬스 체크 엔드포인트를 가장 먼저 정의
 app.get('/health', (req, res) => {
     res.json({
         status: 'ok',
@@ -19,10 +22,11 @@ app.get('/health', (req, res) => {
     });
 });
 
-// OpenAI 클라이언트 설정
+// OpenAI 설정
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
+
 
 // 메시지 분석 엔드포인트
 app.post('/api/analyze-message', async (req, res) => {
@@ -136,15 +140,6 @@ ${Object.entries(byCategory)
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
-});
-
-// 헬스체크 엔드포인트
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        timestamp: new Date(),
-        apiKey: !!process.env.OPENAI_API_KEY
-    });
 });
 
 // 서버 시작
