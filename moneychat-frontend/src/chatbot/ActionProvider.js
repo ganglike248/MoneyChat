@@ -21,20 +21,28 @@ class ActionProvider {
   async handleMessage(message) {
     console.log("ActionProvider handling message:", message);
     try {
-        const response = await fetch('https://moneychat-backend-l7g5.onrender.com/api/analyze-message', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ message })
-        });
+        // 요청 전 상태 확인
+        if (!message.trim()) {
+          throw new Error('메시지가 비어있습니다.');
+      }
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+      const response = await fetch('https://moneychat-backend-l7g5.onrender.com/api/analyze-message', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+          },
+          mode: 'cors', // CORS 명시적 설정
+          body: JSON.stringify({ message })
+      });
 
-        const analysis = await response.json();
-        console.log("Message analysis:", analysis);
+      // 응답 상태 체크를 더 자세히
+      if (!response.ok) {
+          throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`);
+      }
+
+      const analysis = await response.json();
+      console.log("Message analysis:", analysis);
 
         if (analysis.hasExpense && analysis.amount && analysis.category) {
             // 지출 정보 저장 (주제 포함)

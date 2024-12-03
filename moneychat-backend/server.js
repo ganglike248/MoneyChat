@@ -6,9 +6,18 @@ require('dotenv').config();
 const app = express();
 app.use(cors({
     origin: ['https://moneychat-3155a.web.app', 'http://localhost:3000'],
+    methods: ['GET', 'POST'],
     credentials: true
 }));
 app.use(express.json());
+
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date(),
+        apiKey: !!process.env.OPENAI_API_KEY
+    });
+});
 
 // OpenAI 클라이언트 설정
 const openai = new OpenAI({
