@@ -4,7 +4,10 @@ const OpenAI = require('openai');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: ['https://moneychat-3155a.web.app', 'http://localhost:3000'],
+    credentials: true
+}));
 app.use(express.json());
 
 // OpenAI 클라이언트 설정

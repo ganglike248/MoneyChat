@@ -21,7 +21,7 @@ class ActionProvider {
   async handleMessage(message) {
     console.log("ActionProvider handling message:", message);
     try {
-        const response = await fetch('http://localhost:3001/api/analyze-message', {
+        const response = await fetch('https://moneychat-backend-l7g5.onrender.com/api/analyze-message', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ async handleExpenseFeedback() {
       daysInMonth
     };
 
-    const response = await fetch('http://localhost:3001/api/analyze-spending', {
+    const response = await fetch('https://moneychat-backend-l7g5.onrender.com/api/analyze-spending', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
