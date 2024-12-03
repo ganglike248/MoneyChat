@@ -29,13 +29,10 @@ class ActionProvider {
       const response = await fetch('https://moneychat-backend-l7g5.onrender.com/api/analyze-message', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'  // 이 헤더 추가
+            'Content-Type': 'application/json'
         },
-        mode: 'cors',  // 이 옵션 추가
-        credentials: 'include',  // 이 옵션 추가
         body: JSON.stringify({ message })
-      });
+    });
 
       console.log('Response status:', response.status); // 응답 상태 로깅
       if (!response.ok) {

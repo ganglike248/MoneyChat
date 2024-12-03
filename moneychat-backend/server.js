@@ -5,28 +5,26 @@ require('dotenv').config();
 
 const app = express();
 
-// API 요청 로깅 미들웨어를 가장 앞에 배치
+// 순서 중요: JSON 파싱을 먼저
+app.use(express.json());
+
+// CORS 설정
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: false
+}));
+
+// API 요청 로깅 미들웨어
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    console.log('Request body:', req.body);  // 요청 바디도 로깅
+    console.log('Request body:', req.body);
     next();
 });
 
-// 미들웨어 설정
-app.use(cors({
-    origin: [
-        'https://moneychat-3155a.web.app',
-        'https://moneychat-3155a.web.app/chatbot',
-        'http://localhost:3000'
-    ],
-    methods: ['GET', 'POST'],
-    credentials: true
-}));
-// 에러 로깅 미들웨어
-app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    console.error('Stack:', err.stack);  // 스택 트레이스도 로깅
-    res.status(500).json({ error: err.message });
+// OpenAI 설정
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
 });
 
 // 헬스 체크 엔드포인트
@@ -36,11 +34,6 @@ app.get('/health', (req, res) => {
         timestamp: new Date(),
         apiKey: !!process.env.OPENAI_API_KEY
     });
-});
-
-// OpenAI 설정
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
 });
 
 // 메시지 분석 엔드포인트
