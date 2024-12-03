@@ -167,7 +167,6 @@ ${Object.entries(byCategory)
             error: 'An error occurred while analyzing spending',
             message: error.message,
             type: error.type,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
