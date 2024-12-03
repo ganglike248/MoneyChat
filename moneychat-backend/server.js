@@ -20,7 +20,8 @@ app.use(express.json());
 // CORS 설정
 app.use(cors({
     origin: ['https://moneychat-3155a.web.app', 'http://localhost:3000'],
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'OPTIONS'],  // OPTIONS 메서드 추가
+    allowedHeaders: ['Content-Type', 'Accept'],
     credentials: true
 }));
 
@@ -56,6 +57,8 @@ app.get('/health', (req, res) => {
 
 // 메시지 분석 엔드포인트
 app.post('/api/analyze-message', async (req, res) => {
+    console.log('Received request to /api/analyze-message');
+    console.log('Request body:', req.body);
     try {
         // API 키 확인
         if (!process.env.OPENAI_API_KEY) {
@@ -100,8 +103,7 @@ app.post('/api/analyze-message', async (req, res) => {
         console.error('Error details:', error);
         res.status(500).json({
             error: 'Internal server error',
-            message: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            message: error.message
         });
     }
 });

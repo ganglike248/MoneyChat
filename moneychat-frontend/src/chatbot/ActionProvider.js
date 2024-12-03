@@ -26,10 +26,11 @@ class ActionProvider {
         throw new Error('메시지가 비어있습니다.');
       }
 
-      const response = await fetch('https://moneychat-backend-l7g5.onrender.com/api/analyze-message', {
+      const response = await fetch('https://moneychat-backend-17g5.onrender.com/api/analyze-message', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
         },
         body: JSON.stringify({ message })
     });
