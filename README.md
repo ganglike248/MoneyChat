@@ -45,11 +45,12 @@
 
 ## 🛠 기술 스택
 
-### Frontend
+### Frontend & Deploy
 <div>
   <img src="https://img.shields.io/badge/React-61DAFB?style=flat&logo=React&logoColor=white"/>
   <img src="https://img.shields.io/badge/React Router-CA4245?style=flat&logo=React Router&logoColor=white"/>
   <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=CSS3&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Firebase Hosting-FFCA28?style=flat&logo=Firebase&logoColor=black"/>
 </div>
 
 ### Backend & Database
@@ -57,6 +58,7 @@
   <img src="https://img.shields.io/badge/Node.js-339933?style=flat&logo=Node.js&logoColor=white"/>
   <img src="https://img.shields.io/badge/Express-000000?style=flat&logo=Express&logoColor=white"/>
   <img src="https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=Firebase&logoColor=black"/>
+  <img src="https://img.shields.io/badge/Render-46E3B7?style=flat&logo=Render&logoColor=white"/>
 </div>
 
 ### API & Tools
@@ -99,13 +101,45 @@
 # 저장소 클론
 git clone https://github.com/yourusername/moneychat.git
 
-# 의존성 설치
+# 프론트엔드 설정
+cd moneychat-frontend
+npm install
+
+# 백엔드 설정
+cd ../moneychat-backend
 npm install
 
 # 환경 변수 설정
-REACT_APP_FIREBASE_API_KEY=your_api_key
-REACT_APP_OPENAI_API_KEY=your_api_key
+# Frontend (.env)
+REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
+REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+REACT_APP_FIREBASE_APP_ID=your_app_id
+
+# Backend (.env)
+OPENAI_API_KEY=your_openai_api_key
 
 # 개발 서버 실행
-npm run dev
+# Frontend
+cd moneychat-frontend
+npm start
+
+# Backend
+cd moneychat-backend
+npm start
 ```
+
+## 📦 배포 정보
+
+### Frontend
+
+- Firebase Hosting을 통한 정적 웹사이트 배포
+- 실시간 업데이트 및 버전 관리 지원
+
+### Backend
+
+- Render.com을 통한 Node.js 서버 배포
+- 자동 배포 및 SSL 인증서 지원
+실시간 로그 모니터링 제공
