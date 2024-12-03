@@ -5,14 +5,23 @@ require('dotenv').config();
 
 const app = express();
 
-// 순서 중요: JSON 파싱을 먼저
+// Content Security Policy 설정
+app.use((req, res, next) => {
+    res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *"
+    );
+    next();
+});
+
+// JSON 파싱
 app.use(express.json());
 
 // CORS 설정
 app.use(cors({
-    origin: '*',
+    origin: ['https://your-frontend-domain.com', 'http://localhost:3000'],
     methods: ['GET', 'POST'],
-    credentials: false
+    credentials: true
 }));
 
 // API 요청 로깅 미들웨어
@@ -27,6 +36,15 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
+// 루트 경로 핸들러
+app.get('/', (req, res) => {
+    res.json({
+        message: 'Server is running',
+        status: 'ok',
+        timestamp: new Date()
+    });
+});
+
 // 헬스 체크 엔드포인트
 app.get('/health', (req, res) => {
     res.json({
@@ -39,6 +57,11 @@ app.get('/health', (req, res) => {
 // 메시지 분석 엔드포인트
 app.post('/api/analyze-message', async (req, res) => {
     try {
+        // API 키 확인
+        if (!process.env.OPENAI_API_KEY) {
+            throw new Error('OpenAI API key is not configured');
+        }
+
         const { message } = req.body;
         console.log('Analyzing message:', message);
 
@@ -74,10 +97,11 @@ app.post('/api/analyze-message', async (req, res) => {
 
         res.json(analysis);
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error details:', error);
         res.status(500).json({
             error: 'Internal server error',
-            message: error.message
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
@@ -106,8 +130,8 @@ app.post('/api/analyze-spending', async (req, res) => {
 - 경과 일수: ${daysInMonth}일
 - 카테고리별 지출:
 ${Object.entries(byCategory)
-                        .map(([category, amount]) => `  - ${category}: ${amount.toLocaleString()}원`)
-                        .join('\n')}
+    .map(([category, amount]) => `  - ${category}: ${amount.toLocaleString()}원`)
+    .join('\n')}
 
 다음 사항을 포함하여 간단히 각 주제에 대해 1~2줄 정도로 분석해주세요:
 1. 현재 지출 패턴의 특징
@@ -115,8 +139,6 @@ ${Object.entries(byCategory)
 `
             }
         ];
-
-        console.log('Preparing OpenAI API call with messages:', messages);
 
         try {
             const completion = await openai.chat.completions.create({
@@ -128,8 +150,6 @@ ${Object.entries(byCategory)
                 frequency_penalty: 0,
                 presence_penalty: 0
             });
-
-            console.log('OpenAI API Response:', completion.choices[0]);
 
             res.json({
                 feedback: completion.choices[0].message.content
