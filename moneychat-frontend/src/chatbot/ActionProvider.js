@@ -27,19 +27,19 @@ class ActionProvider {
       }
 
       const response = await fetch('https://moneychat-backend-l7g5.onrender.com/api/analyze-message', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-          },
-          mode: 'cors', // CORS 명시적 설정
-          body: JSON.stringify({ message })
-      });
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message })
+    });
 
-      // 응답 상태 체크를 더 자세히
-      if (!response.ok) {
-          throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`);
-      }
+    console.log('Response status:', response.status); // 응답 상태 로깅
+    if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Error response:', errorData); // 에러 응답 로깅
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
       const analysis = await response.json();
       console.log("Message analysis:", analysis);
