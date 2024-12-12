@@ -80,7 +80,6 @@
     padding: 1.25rem;
     background-color: #f8fafc;
     scroll-behavior: smooth;
-    margin-bottom: 25px;  /* 입력 영역 높이만큼 여백 추가 */
 }
 
 .react-chatbot-kit-chat-message-container::-webkit-scrollbar {
@@ -145,7 +144,6 @@
 .react-chatbot-kit-user-chat-message-container {
     display: flex;
     align-items: flex-start;
-    margin: 1rem 0;
     gap: 0.5rem;
 }
 
@@ -154,7 +152,7 @@
     align-items: flex-start;
     gap: 0.5rem;
     padding-right: 35%;  /* 오른쪽 여백 추가로 겹침 방지 */
-    margin: 1rem 0;
+    margin: 0.5rem 0;
 }
 
 .react-chatbot-kit-user-avatar-container {
@@ -240,7 +238,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    margin: 1rem 0;
+    margin: 0.5rem 0;
     width: 100%;
     max-width: 240px;
 }
