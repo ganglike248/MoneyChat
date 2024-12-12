@@ -36,13 +36,13 @@ const ChatbotPage = () => {
     return (
         <div className="chatbotPage_container">
             <div className='chatbotPage_headerDiv'>
-                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', width: '70%'}}>
                     <img
                         src="/logo.png"
                         alt="MoneyChat Avatar"
                         style={{
-                            width: '70px',
-                            height: '70px',
+                            width: '15%',
+                            height: '15%',
                             borderRadius: '50%',
                             objectFit: 'cover',
                             marginRight: '10px'

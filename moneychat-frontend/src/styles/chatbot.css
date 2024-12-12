@@ -17,12 +17,12 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 1rem 0;
-    margin-bottom: 1rem;
+    padding: 0 0 1rem 0;
     flex-direction: row;
 }
 
 .chatbotPage_header {
+    width: 85%;
     font-weight: 600;
     font-size: 1.5rem;
     color: #2d3748;
