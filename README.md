@@ -99,6 +99,7 @@ npm install
 
 # 환경 변수 설정
 # Frontend 
+## Firebase Console에서 새 프로젝트를 생성하고 아래의 설정값들을 입력하고, Authentication를 설정해주세요.
 ## moneychat-frontend/src/firebase/firebaseConfig.js 파일 생성 후 아래 내용 추가:
 
 import { initializeApp } from 'firebase/app';
@@ -120,8 +121,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 export { auth, db, onAuthStateChanged };
-
-## Firebase Console에서 새 프로젝트를 생성하고 위의 설정값들을 입력하고 Authentication를 설정해주세요.
 
 # Backend
 ## moneychat-backend/.env 파일 생성 후 아래 내용 추가:
