@@ -19,6 +19,7 @@
     width: 100%;
     padding: 1rem 0;
     margin-bottom: 1rem;
+    flex-direction: row;
 }
 
 .chatbotPage_header {
@@ -122,7 +123,7 @@
 }
 
 .react-chatbot-kit-chat-btn-send {
-    background-color: #4299e1;
+    background-color: #4299e1 !important;
     border: none;
     border-radius: 8px;
     width: 40px;
@@ -133,6 +134,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
 }
+
 
 .react-chatbot-kit-chat-btn-send:hover {
     background-color: #3182ce;

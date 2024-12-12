@@ -33,6 +33,25 @@ const config = {
       backgroundColor: "#ffeb33",
     },
   },
+  customComponents: {
+    botAvatar: (props) => (
+      <div style={{
+        overflow: 'clip-margin',
+        overflow: 'clip'
+      }}>
+        <img
+          src="/logo.png"
+          alt="MoneyChat Avatar"
+          style={{
+            width: '50px',
+            height: '50px',
+            borderRadius: '50%',
+            objectFit: 'cover'
+          }}
+        />
+      </div>
+    )
+  },
 };
 
 export default config;

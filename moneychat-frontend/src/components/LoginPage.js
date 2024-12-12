@@ -24,23 +24,33 @@ const LoginPage = () => {
     return (
         <div className='LoginPage_container'>
             <div className='LoginPage_subContainer'>
-                <h2>MoneyChat</h2>
+                <img
+                    src="/logo.png"
+                    alt="MoneyChat Avatar"
+                    style={{
+                        width: '40%',
+                        height: '40%',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                    }}
+                />
+                <h2 style={{marginTop: '0'}}>MoneyChat</h2>
                 <h5>머니챗과 함께 하루를 기록해보세요!</h5>
                 <form onSubmit={handleLogin} className='LoginPage_LoginForm'>
                     <div className='LoginPage_Logininput'>
-                    <input
-                        type="email"
-                        placeholder="이메일" className='LoginPage_email'
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-                    <input
-                        type="password"
-                        placeholder="비밀번호"
-                        className='LoginPage_password'
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
+                        <input
+                            type="email"
+                            placeholder="이메일" className='LoginPage_email'
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        <input
+                            type="password"
+                            placeholder="비밀번호"
+                            className='LoginPage_password'
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
                     </div>
                     <button className='LoginPage_LoginBtn' type="submit">로그인</button>
                 </form>

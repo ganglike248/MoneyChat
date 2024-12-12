@@ -36,7 +36,20 @@ const ChatbotPage = () => {
     return (
         <div className="chatbotPage_container">
             <div className='chatbotPage_headerDiv'>
-                <h2 className="chatbotPage_header">하루의 지출을 머니챗과 함께!</h2>
+                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+                    <img
+                        src="/logo.png"
+                        alt="MoneyChat Avatar"
+                        style={{
+                            width: '70px',
+                            height: '70px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            marginRight: '10px'
+                        }}
+                    />
+                    <h2 className="chatbotPage_header">하루의 지출을 머니챗과 함께!</h2>
+                </div>
                 <button className="chatbotPage_logoutBtn" onClick={handleLogout}>
                     로그아웃
                 </button>
