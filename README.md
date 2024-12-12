@@ -29,7 +29,7 @@
 - 맞춤형 지출 패턴 피드백
 
 ### 3. 사용자 경험 최적화
-- 실시간 타이핑 인디케이터
+- 실시간 데이터 동기화
 - 반응형 디자인으로 모바일 환경 지원
 - 직관적인 UI/UX
 
@@ -75,31 +75,19 @@
 - 지출 내역을 자동으로 카테고리화하고 적절한 피드백 제공
 
 ### 2. 실시간 데이터 처리
-- Firebase Firestore를 활용한 실시간 데이터 동기화
+- Firebase Authentication을 통한 사용자 인증
+- Firestore를 활용한 실시간 데이터 저장 및 조회
 - 효율적인 데이터 구조 설계로 빠른 조회 성능 확보
 
 ### 3. 사용자 중심 디자인
-- 모바일 퍼스트 접근으로 반응형 UI 구현
-- 직관적인 인터랙션으로 사용자 경험 최적화
-
-## 📝 회고 및 개선 사항
-
-### 성과
-- GPT API를 활용한 자연어 처리로 사용자 친화적 인터페이스 구현
-- Firebase를 통한 안정적인 사용자 인증 및 데이터 관리 시스템 구축
-- 실시간 타이핑 인디케이터 등 세심한 UX 요소 적용
-
-### 향후 개선 계획
-- 더 상세한 지출 분석 리포트 제공
-- 예산 설정 및 알림 기능 추가
-- 소셜 로그인 통합
-- 데이터 시각화 강화
+- 모바일 환경을 고려한 반응형 UI 구현
+- 직관적인 채팅 인터페이스로 사용자 경험 최적화
 
 ## 💻 설치 및 실행
 
 ```bash
 # 저장소 클론
-git clone https://github.com/yourusername/moneychat.git
+git clone https://github.com/ganglike248/MoneyChat.git
 
 # 프론트엔드 설정
 cd moneychat-frontend
@@ -110,16 +98,36 @@ cd ../moneychat-backend
 npm install
 
 # 환경 변수 설정
-# Frontend (.env)
-REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
-REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
-REACT_APP_FIREBASE_PROJECT_ID=your_project_id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-REACT_APP_FIREBASE_APP_ID=your_app_id
+# Frontend 
+## moneychat-frontend/src/firebase/firebaseConfig.js 파일 생성 후 아래 내용 추가:
 
-# Backend (.env)
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+
+const firebaseConfig = {
+    apiKey: "your-api-key",
+    authDomain: "your-auth-domain",
+    projectId: "your-project-id",
+    storageBucket: "your-storage-bucket",
+    messagingSenderId: "your-messaging-sender-id",
+    appId: "your-app-id",
+    measurementId: "your-measurement-id"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+export { auth, db, onAuthStateChanged };
+
+## Firebase Console에서 새 프로젝트를 생성하고 위의 설정값들을 입력하고 Authentication를 설정해주세요.
+
+# Backend
+## moneychat-backend/.env 파일 생성 후 아래 내용 추가:
 OPENAI_API_KEY=your_openai_api_key
+PORT=3001
+NODE_ENV=development
 
 # 개발 서버 실행
 # Frontend
@@ -135,11 +143,32 @@ npm start
 
 ### Frontend
 
-- Firebase Hosting을 통한 정적 웹사이트 배포
+- Firebase Hosting을 통한 웹사이트 배포
 - 실시간 업데이트 및 버전 관리 지원
 
 ### Backend
 
 - Render.com을 통한 Node.js 서버 배포
 - 자동 배포 및 SSL 인증서 지원
-실시간 로그 모니터링 제공
+- 실시간 로그 모니터링 제공
+
+## 📝 향후 개선 계획
+
+### 기능 개선
+
+- 상세 지출 분석 리포트 제공
+- 예산 설정 및 알림 기능
+- 소셜 로그인 통합
+
+
+### 기술 개선
+
+- 데이터 시각화 강화
+- 성능 최적화
+- 에러 처리 강화
+
+
+## 📌 참고사항
+
+- 백엔드 서버로 Render.com의 무료 버전을 사용하고 있어 첫 접속 시 서버 응답이 지연될 수 있습니다. 무료 버전의 경우 일정 시간 동안 요청이 없으면 서버가 휴면 상태로 전환되기 때문에, 첫 요청 시 서버가 다시 활성화되는 데 약 1-2분 정도 소요될 수 있습니다.
+- 그래서 서비스 이용을 위해서는 본 프로젝트 개발자에게 백엔드 서버 구동을 먼저 요청해 주셔야 합니다. 서버가 활성화되면 정상적으로 서비스를 이용하실 수 있습니다. 감사합니다.

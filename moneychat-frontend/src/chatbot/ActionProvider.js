@@ -16,12 +16,23 @@ class ActionProvider {
     this.saveExpense = this.saveExpense.bind(this);
     this.calculateExpenseSummary = this.calculateExpenseSummary.bind(this);
     this.updateChatbotState = this.updateChatbotState.bind(this);
+    this.addOptionsMessage = this.addOptionsMessage.bind(this);
+  }
+
+  // 새로운 메서드: 옵션 메시지 추가
+  addOptionsMessage() {
+    const optionsMessage = this.createChatBotMessage(
+      "지금까지의 지출 현황을 확인해보시겠어요?",
+      {
+        widget: "options",
+      }
+    );
+    this.updateChatbotState(optionsMessage);
   }
 
   async handleMessage(message) {
     console.log("ActionProvider handling message:", message);
     try {
-      // 요청 전 상태 확인
       if (!message.trim()) {
         throw new Error('메시지가 비어있습니다.');
       }
@@ -29,16 +40,16 @@ class ActionProvider {
       const response = await fetch('https://moneychat-backend-17g5.onrender.com/api/analyze-message', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({ message })
-    });
+      });
 
-      console.log('Response status:', response.status); // 응답 상태 로깅
+      console.log('Response status:', response.status);
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('Error response:', errorData); // 에러 응답 로깅
+        console.error('Error response:', errorData);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -46,55 +57,29 @@ class ActionProvider {
       console.log("Message analysis:", analysis);
 
       if (analysis.hasExpense && analysis.amount && analysis.category) {
-        // 지출 정보 저장 (주제 포함)
         await this.saveExpense(analysis.subject, analysis.category, analysis.amount);
 
-        // 지출 입력에 대한 응답
         const responseMessage = this.createChatBotMessage(
           `${analysis.subject}(${analysis.category}) 항목에 ${analysis.amount.toLocaleString()}원을 지출하셨네요!\n${analysis.feedback}`
         );
         this.updateChatbotState(responseMessage);
-
-        // 지출 분석 제안
-        const analysisMessage = this.createChatBotMessage(
-          "지금까지의 지출 현황을 확인해보시겠어요?",
-          {
-            widget: "options",
-          }
-        );
-        this.updateChatbotState(analysisMessage);
       } else {
         const defaultMessage = this.createChatBotMessage(analysis.feedback);
         this.updateChatbotState(defaultMessage);
       }
+      
+      // 모든 응답 후에 옵션 메시지 추가
+      this.addOptionsMessage();
     } catch (error) {
       console.error("Error in handleMessage:", error);
       const errorMessage = this.createChatBotMessage(
         "죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요."
       );
       this.updateChatbotState(errorMessage);
+      this.addOptionsMessage();
     }
   }
 
-
-  async saveExpense(subject, category, amount) {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const expenseData = {
-      subject,
-      category,
-      amount,
-      timestamp: Timestamp.now(),
-    };
-
-    const expensesRef = collection(db, 'expenses');
-    const userDocRef = doc(expensesRef, user.uid);
-    const userExpensesRef = collection(userDocRef, 'userExpenses');
-    await addDoc(userExpensesRef, expenseData);
-  }
-
-  // ActionProvider.js의 handleTodayExpenses 메서드 수정
   async handleTodayExpenses() {
     const summary = await this.calculateExpenseSummary('today');
     const message = this.createChatBotMessage(
@@ -109,9 +94,9 @@ class ActionProvider {
         .join('\n')}`
     );
     this.updateChatbotState(message);
+    this.addOptionsMessage();
   }
 
-  // handleWeekExpenses와 handleMonthExpenses도 같은 방식으로 수정
   async handleWeekExpenses() {
     const summary = await this.calculateExpenseSummary('week');
     const message = this.createChatBotMessage(
@@ -122,6 +107,7 @@ class ActionProvider {
         .join('\n')}`
     );
     this.updateChatbotState(message);
+    this.addOptionsMessage();
   }
 
   async handleMonthExpenses() {
@@ -134,9 +120,9 @@ class ActionProvider {
         .join('\n')}`
     );
     this.updateChatbotState(message);
+    this.addOptionsMessage();
   }
 
-  // handleExpenseFeedback 메서드 수정
   async handleExpenseFeedback() {
     try {
       const user = auth.currentUser;
@@ -144,6 +130,7 @@ class ActionProvider {
         this.updateChatbotState(this.createChatBotMessage(
           "로그인이 필요한 서비스입니다."
         ));
+        this.addOptionsMessage();
         return;
       }
 
@@ -154,6 +141,7 @@ class ActionProvider {
         this.updateChatbotState(this.createChatBotMessage(
           "아직 이번 달 지출 내역이 없습니다."
         ));
+        this.addOptionsMessage();
         return;
       }
 
@@ -182,16 +170,15 @@ class ActionProvider {
       }
 
       const data = await response.json();
-
-      // 줄바꿈 처리를 위한 텍스트 포매팅
       const formattedFeedback = data.feedback
-        .split(/(?:\d+\.\s)/) // 숫자. 으로 시작하는 부분을 기준으로 분리
-        .filter(text => text.trim()) // 빈 문자열 제거
-        .map(text => text.trim()) // 각 부분 앞뒤 공백 제거
-        .join('\n\n'); // 줄바꿈으로 다시 연결
+        .split(/(?:\d+\.\s)/)
+        .filter(text => text.trim())
+        .map(text => text.trim())
+        .join('\n\n');
 
       const feedbackMessage = this.createChatBotMessage(formattedFeedback);
       this.updateChatbotState(feedbackMessage);
+      this.addOptionsMessage();
 
     } catch (error) {
       console.error("Error getting feedback:", error);
@@ -199,7 +186,25 @@ class ActionProvider {
         "죄송합니다. 피드백을 생성하는 중 문제가 발생했어요. 다시 시도해주세요."
       );
       this.updateChatbotState(errorMessage);
+      this.addOptionsMessage();
     }
+  }
+
+  async saveExpense(subject, category, amount) {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const expenseData = {
+      subject,
+      category,
+      amount,
+      timestamp: Timestamp.now(),
+    };
+
+    const expensesRef = collection(db, 'expenses');
+    const userDocRef = doc(expensesRef, user.uid);
+    const userExpensesRef = collection(userDocRef, 'userExpenses');
+    await addDoc(userExpensesRef, expenseData);
   }
 
   async calculateExpenseSummary(period) {
