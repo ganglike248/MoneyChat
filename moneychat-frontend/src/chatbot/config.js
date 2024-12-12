@@ -35,21 +35,16 @@ const config = {
   },
   customComponents: {
     botAvatar: (props) => (
-      <div style={{
-        overflow: 'clip-margin',
-        overflow: 'clip'
-      }}>
         <img
           src="/logo.png"
           alt="MoneyChat Avatar"
           style={{
-            width: '50px',
-            height: '50px',
+            width: '20%',
+            height: '20%',
             borderRadius: '50%',
             objectFit: 'cover'
           }}
         />
-      </div>
     )
   },
 };
