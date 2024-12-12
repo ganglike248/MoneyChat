@@ -152,7 +152,7 @@
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
-    padding-right: 35%;
+    padding-right: 40%;
     /* 오른쪽 여백 추가로 겹침 방지 */
     margin: 0.5rem 0;
 }
@@ -247,7 +247,7 @@
     flex-direction: column;
     gap: 0.5rem;
     margin: 0.5rem 0;
-    width: 65%;
+    width: 60%;
 }
 
 .option-button {
@@ -292,8 +292,7 @@
         width: 100%;
     }
 
-    .react-chatbot-kit-chat-bot-message,
-    .react-chatbot-kit-user-chat-message {
+    .react-chatbot-kit-chat-bot-message {
         max-width: 100%;
         width: 100%;
     }
