@@ -1,3 +1,28 @@
+<머니챗>
+
+수정 후 빌드 방법
+
+프론트 빌드
+- 프론트 폴더에서
+- npm run build
+- firebase deploy
+
+백은 최상위 폴더에서 깃허브 푸시하면 알아서 됨
+- 깃허브 푸시(푸시 후 시간지나면 알아서 됨)
+- render 사이트 event에서 배포 상태 확인
+
+Live (초록색) - 정상 작동 중
+Deploying (파란색) - 배포 진행 중
+Failed (빨간색) - 배포 실패
+Suspended (회색) - 서비스 중지
+
++ 백엔드 서버가 무료 버전이라 첫 API 요청 시 1~2분 지연됨
+
+https://moneychat-3155a.web.app/
+
+
+<버전>
+
 2024.09.30(v0.0.1)
 - 프로젝트 생성
 - 라이브러리 설치 : 
@@ -31,5 +56,10 @@ npm install react-router-dom react-firebase-hooks
 - gpt 챗봇 api 작동됨
 - 일부 css 수정
 
-다음 작업
-- css 수정
+2024.12.14(v1.0.0)
+- 배포 및 프로젝트 구현 완료
+
+
+<다음 작업>
+
+- 
