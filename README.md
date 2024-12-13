@@ -1,8 +1,4 @@
-# 💰 머니챗(MoneyChat) 
-
-<div align="center">
-  <img src="./moneychat-frontend/public/logo.png" width="100" alt="MoneyChat Logo">
-</div>
+# <img src="./moneychat-frontend/public/logo.png" width="30" alt="MoneyChat Logo"> 머니챗(MoneyChat) 
 
 > 일상적인 대화로 간편하게 기록하는 AI 가계부 챗봇
 
