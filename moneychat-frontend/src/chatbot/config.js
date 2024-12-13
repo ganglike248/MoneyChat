@@ -5,7 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const config = {
   initialMessages: [
     createChatBotMessage(
-      "안녕하세요! 저는 당신의 지출 관리를 도와드릴 MoneyChat입니다. 편하게 오늘 지출하신 내용을 알려주세요!",
+      "안녕하세요! 저는 당신의 지출 관리를 도와드릴 '머니챗'입니다. 오늘 지출하신 내용을 편하게 알려주세요!",
       {
         widget: "options",
       }
