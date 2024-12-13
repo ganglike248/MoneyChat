@@ -16,18 +16,6 @@ class ActionProvider {
     this.saveExpense = this.saveExpense.bind(this);
     this.calculateExpenseSummary = this.calculateExpenseSummary.bind(this);
     this.updateChatbotState = this.updateChatbotState.bind(this);
-    this.addOptionsMessage = this.addOptionsMessage.bind(this);
-  }
-
-  // 새로운 메서드: 옵션 메시지 추가
-  addOptionsMessage() {
-    const optionsMessage = this.createChatBotMessage(
-      "지금까지의 지출 현황을 확인해보시겠어요?",
-      {
-        widget: "options",
-      }
-    );
-    this.updateChatbotState(optionsMessage);
   }
 
   async handleMessage(message) {
@@ -60,23 +48,28 @@ class ActionProvider {
         await this.saveExpense(analysis.subject, analysis.category, analysis.amount);
 
         const responseMessage = this.createChatBotMessage(
-          `${analysis.subject}(${analysis.category}) 항목에 ${analysis.amount.toLocaleString()}원을 지출하셨네요!\n${analysis.feedback}`
+          `${analysis.subject}(${analysis.category}) 항목에 ${analysis.amount.toLocaleString()}원을 지출하셨네요!\n${analysis.feedback}`,
+          {
+            widget: "options",
+          }
         );
         this.updateChatbotState(responseMessage);
       } else {
-        const defaultMessage = this.createChatBotMessage(analysis.feedback);
+        const defaultMessage = this.createChatBotMessage(analysis.feedback,
+          {
+            widget: "options",
+          });
         this.updateChatbotState(defaultMessage);
       }
-      
-      // 모든 응답 후에 옵션 메시지 추가
-      this.addOptionsMessage();
     } catch (error) {
       console.error("Error in handleMessage:", error);
       const errorMessage = this.createChatBotMessage(
-        "죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요."
+        "죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요.",
+        {
+          widget: "options",
+        }
       );
       this.updateChatbotState(errorMessage);
-      this.addOptionsMessage();
     }
   }
 
@@ -91,10 +84,12 @@ class ActionProvider {
       `상세 지출:\n` +
       `${Object.entries(summary.bySubject)
         .map(([subject, amount]) => `${subject}: ${amount.toLocaleString()}원`)
-        .join('\n')}`
+        .join('\n')}`,
+      {
+        widget: "options",
+      }
     );
     this.updateChatbotState(message);
-    this.addOptionsMessage();
   }
 
   async handleWeekExpenses() {
@@ -104,10 +99,12 @@ class ActionProvider {
       `카테고리별 지출:\n` +
       `${Object.entries(summary.byCategory)
         .map(([category, amount]) => `${category}: ${amount.toLocaleString()}원`)
-        .join('\n')}`
+        .join('\n')}`,
+      {
+        widget: "options",
+      }
     );
     this.updateChatbotState(message);
-    this.addOptionsMessage();
   }
 
   async handleMonthExpenses() {
@@ -117,10 +114,12 @@ class ActionProvider {
       `카테고리별 지출:\n` +
       `${Object.entries(summary.byCategory)
         .map(([category, amount]) => `${category}: ${amount.toLocaleString()}원`)
-        .join('\n')}`
+        .join('\n')}`,
+      {
+        widget: "options",
+      }
     );
     this.updateChatbotState(message);
-    this.addOptionsMessage();
   }
 
   async handleExpenseFeedback() {
@@ -128,9 +127,11 @@ class ActionProvider {
       const user = auth.currentUser;
       if (!user) {
         this.updateChatbotState(this.createChatBotMessage(
-          "로그인이 필요한 서비스입니다."
+          "로그인이 필요한 서비스입니다.",
+          {
+            widget: "options",
+          }
         ));
-        this.addOptionsMessage();
         return;
       }
 
@@ -139,9 +140,11 @@ class ActionProvider {
 
       if (monthSummary.total === 0) {
         this.updateChatbotState(this.createChatBotMessage(
-          "아직 이번 달 지출 내역이 없습니다."
+          "아직 이번 달 지출 내역이 없습니다.",
+          {
+            widget: "options",
+          }
         ));
-        this.addOptionsMessage();
         return;
       }
 
@@ -176,17 +179,21 @@ class ActionProvider {
         .map(text => text.trim())
         .join('\n\n');
 
-      const feedbackMessage = this.createChatBotMessage(formattedFeedback);
+      const feedbackMessage = this.createChatBotMessage(formattedFeedback,
+        {
+          widget: "options",
+        });
       this.updateChatbotState(feedbackMessage);
-      this.addOptionsMessage();
 
     } catch (error) {
       console.error("Error getting feedback:", error);
       const errorMessage = this.createChatBotMessage(
-        "죄송합니다. 피드백을 생성하는 중 문제가 발생했어요. 다시 시도해주세요."
+        "죄송합니다. 피드백을 생성하는 중 문제가 발생했어요. 다시 시도해주세요.",
+        {
+          widget: "options",
+        }
       );
       this.updateChatbotState(errorMessage);
-      this.addOptionsMessage();
     }
   }
 
