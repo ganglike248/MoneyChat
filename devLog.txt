@@ -64,6 +64,7 @@ npm install react-router-dom react-firebase-hooks
 
 2024.12.14(v1.0.2)
 - PWA(웹 앱 배포) 활성화
+- 안드로이드 apk 파일 추가
 
 
 <다음 작업>

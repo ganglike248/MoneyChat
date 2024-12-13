@@ -9,7 +9,8 @@
 자연스러운 대화를 통해 지출을 기록하고 분석해주는 AI 챗봇 서비스입니다. 복잡한 가계부 작성 대신, 채팅으로 쉽게 지출을 관리할 수 있습니다.
 
 ## 🔗 링크
-- [https://moneychat-3155a.web.app/](https://moneychat-3155a.web.app/)
+- 웹 사이트 - [https://moneychat-3155a.web.app/](https://moneychat-3155a.web.app/)
+- 안드로이드 - 프로젝트 최상단에 위치한 'MoneyChat.apk' 파일 다운로드
 
 ## 💫 화면 구성
 
