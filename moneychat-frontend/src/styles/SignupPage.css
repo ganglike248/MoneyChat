@@ -31,12 +31,18 @@
     width: 100%;
 }
 
-.SignupPage_input {
+/* 입력 필드와 버튼의 공통 스타일 */
+.SignupPage_input,
+.SignupPage_button {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #e2e8f0;
     border-radius: 8px;
     font-size: 0.875rem;
+}
+
+/* 입력 필드 고유 스타일 */
+.SignupPage_input {
+    border: 1px solid #e2e8f0;
     transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
     box-sizing: border-box;
@@ -47,12 +53,9 @@
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
 }
 
+/* 버튼 고유 스타일 */
 .SignupPage_button {
-    width: 100%;
-    padding: 0.75rem;
     border: none;
-    border-radius: 8px;
-    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     background-color: #48bb78;

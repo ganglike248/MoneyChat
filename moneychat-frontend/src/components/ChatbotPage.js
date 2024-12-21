@@ -13,16 +13,18 @@ import '../styles/chatbot.css';
 const ChatbotPage = () => {
     const navigate = useNavigate();
 
+    // 로그인 확인인
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
             if (!user) {
-                navigate('/');
+                navigate('/'); // 메인화면(로그인)으로 이동
             }
         });
 
         return () => unsubscribe();
     }, [navigate]);
 
+    // 로그아웃
     const handleLogout = async () => {
         try {
             await signOut(auth);

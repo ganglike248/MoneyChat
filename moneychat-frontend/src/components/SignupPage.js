@@ -12,12 +12,13 @@ const SignupPage = () => {
   // const [nickname, setNickname] = useState('');
   const navigate = useNavigate();
 
+  // 회원가입
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
+
       // Firestore에 사용자의 닉네임 저장
       await setDoc(doc(db, "users", user.uid), {
         // nickname: nickname,
@@ -33,17 +34,17 @@ const SignupPage = () => {
   return (
     <div className="SignupPage_container">
       <div className="SignupPage_subContainer">
-      <img
-                    src="/logo.png"
-                    alt="MoneyChat Avatar"
-                    style={{
-                        width: '40%',
-                        height: '40%',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                    }}
-                />
-        <h2 style={{marginTop: '0'}}>MoneyChat 회원가입</h2>
+        <img
+          src="/logo.png"
+          alt="MoneyChat Avatar"
+          style={{
+            width: '40%',
+            height: '40%',
+            borderRadius: '50%',
+            objectFit: 'cover',
+          }}
+        />
+        <h2 style={{ marginTop: '0' }}>MoneyChat 회원가입</h2>
         <form onSubmit={handleSignup} className="SignupPage_form">
           <input
             type="email"

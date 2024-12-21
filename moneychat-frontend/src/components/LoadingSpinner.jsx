@@ -1,6 +1,7 @@
 // components/LoadingSpinner.jsx
 import React from 'react';
 
+// 로딩 시 사용 예정
 const LoadingSpinner = () => {
   return (
     <div className="flex items-center justify-center p-4">

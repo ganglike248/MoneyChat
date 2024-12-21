@@ -1,5 +1,6 @@
 import React from 'react';
 
+// 버튼 옵션
 const Options = (props) => {
     const options = [
         { 

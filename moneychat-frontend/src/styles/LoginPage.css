@@ -42,18 +42,8 @@
     width: 100%;
 }
 
-.LoginPage_email{
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    transition: border-color 0.2s;
-    outline: none;
-    box-sizing: border-box;
-    margin-bottom: 10px;
-}
-
+/* 입력 필드 공통 스타일 */
+.LoginPage_email,
 .LoginPage_password {
     width: 100%;
     padding: 0.75rem;
@@ -65,12 +55,17 @@
     box-sizing: border-box;
 }
 
+.LoginPage_email {
+    margin-bottom: 10px;
+}
+
 .LoginPage_email:focus,
 .LoginPage_password:focus {
     border-color: #4299e1;
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
 }
 
+/* 버튼 공통 스타일 */
 .LoginPage_LoginBtn,
 .LoginPage_signupBtn {
     width: 100%;
@@ -81,22 +76,21 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    color: white;
 }
 
 .LoginPage_LoginBtn {
     background-color: #4299e1;
-    color: white;
     margin-bottom: 0.75rem;
+}
+
+.LoginPage_signupBtn {
+    background-color: #48bb78;
 }
 
 .LoginPage_LoginBtn:hover {
     background-color: #3182ce;
     transform: translateY(-1px);
-}
-
-.LoginPage_signupBtn {
-    background-color: #48bb78;
-    color: white;
 }
 
 .LoginPage_signupBtn:hover {

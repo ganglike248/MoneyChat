@@ -10,12 +10,13 @@ const LoginPage = () => {
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
+    // 로그인
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
             // 모듈식으로 signInWithEmailAndPassword 호출
             await signInWithEmailAndPassword(auth, email, password);
-            navigate('/chatbot');
+            navigate('/chatbot'); // 챗봇 화면으로 이동
         } catch (error) {
             alert('로그인 실패: ' + error.message);
         }
@@ -34,7 +35,7 @@ const LoginPage = () => {
                         objectFit: 'cover',
                     }}
                 />
-                <h2 style={{marginTop: '0'}}>MoneyChat</h2>
+                <h2 style={{ marginTop: '0' }}>MoneyChat</h2>
                 <h5>머니챗과 함께 하루를 기록해보세요!</h5>
                 <form onSubmit={handleLogin} className='LoginPage_LoginForm'>
                     <div className='LoginPage_Logininput'>
