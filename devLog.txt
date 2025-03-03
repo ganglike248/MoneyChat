@@ -70,6 +70,9 @@ npm install react-router-dom react-firebase-hooks
 - CSS 중복 제거
 - 코드 설명 주석 추가
 
+2025.03.04(v1.0.4)
+- 머니챗 설명서 PDF 자료 업로드
+
 
 <다음 작업>
 
