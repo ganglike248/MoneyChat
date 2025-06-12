@@ -1,34 +1,41 @@
+import React from 'react';
 import { db, auth } from '../firebase/firebaseConfig';
-import { collection, doc, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, getDocs, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
 
-class ActionProvider {
-  // 챗봇의 상태 관리와 메시지 생성을 위한 생성자 함수
-  constructor(createChatBotMessage, setStateFunc, createClientMessage) {
-    this.createChatBotMessage = createChatBotMessage;
-    this.setState = setStateFunc;
-    this.createClientMessage = createClientMessage;
+// 함수형 컴포넌트로 완전히 변경
+const ActionProvider = ({ createChatBotMessage, setState, children }) => {
 
-    // 메서드 바인딩
-    this.handleMessage = this.handleMessage.bind(this);
-    this.handleTodayExpenses = this.handleTodayExpenses.bind(this);
-    this.handleWeekExpenses = this.handleWeekExpenses.bind(this);
-    this.handleMonthExpenses = this.handleMonthExpenses.bind(this);
-    this.handleExpenseFeedback = this.handleExpenseFeedback.bind(this);
-    this.saveExpense = this.saveExpense.bind(this);
-    this.calculateExpenseSummary = this.calculateExpenseSummary.bind(this);
-    this.updateChatbotState = this.updateChatbotState.bind(this);
-  }
+  // 사용자 메시지를 수동으로 생성하는 함수
+  const addUserMessage = (message) => {
+    const userMessage = {
+      message: message,
+      type: 'user',
+      id: Date.now() + Math.random(),
+    };
+
+    setState((prev) => ({
+      ...prev,
+      messages: [...prev.messages, userMessage],
+    }));
+  };
+
+  // 봇 메시지 추가 헬퍼 함수
+  const addBotMessage = (message) => {
+    const botMessage = createChatBotMessage(message);
+    setState((prev) => ({
+      ...prev,
+      messages: [...prev.messages, botMessage],
+    }));
+  };
 
   // 사용자 입력 메시지를 분석하고 처리하는 함수
-  async handleMessage(message) {
+  const handleMessage = async (message) => {
     console.log("ActionProvider handling message:", message);
     try {
-      // 빈 메시지 체크
       if (!message.trim()) {
         throw new Error('메시지가 비어있습니다.');
       }
 
-      // API를 통해 메시지 분석 요청
       const response = await fetch('https://moneychat-backend-17g5.onrender.com/api/analyze-message', {
         method: 'POST',
         headers: {
@@ -38,184 +45,127 @@ class ActionProvider {
         body: JSON.stringify({ message })
       });
 
-      console.log('Response status:', response.status);
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Error response:', errorData);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const analysis = await response.json();
-      console.log("Message analysis:", analysis);
 
-      // 지출 정보가 포함된 경우와 아닌 경우를 구분하여 처리
       if (analysis.hasExpense && analysis.amount && analysis.category) {
-        // 지출 정보를 DB에 저장
-        await this.saveExpense(analysis.subject, analysis.category, analysis.amount);
+        await saveExpense(analysis.subject, analysis.category, analysis.amount);
 
-        // 지출 정보와 간단한 피드백을 포함한 응답 메시지 생성
-        const responseMessage = this.createChatBotMessage(
-          `${analysis.subject}(${analysis.category}) 항목에 ${analysis.amount.toLocaleString()}원을 지출하셨네요!\n${analysis.feedback}`,
-          {
-            widget: "options",
-          }
+        const responseMessage = createChatBotMessage(
+          `${analysis.subject}(${analysis.category}) 항목에 ${analysis.amount.toLocaleString()}원을 지출하셨네요!\n${analysis.feedback}`
         );
-        this.updateChatbotState(responseMessage);
+        setState((prev) => ({
+          ...prev,
+          messages: [...prev.messages, responseMessage],
+        }));
       } else {
-        // 일반(일상) 대화에 대한 응답 메시지 생성
-        const defaultMessage = this.createChatBotMessage(analysis.feedback,
-          {
-            widget: "options",
-          });
-        this.updateChatbotState(defaultMessage);
+        const defaultMessage = createChatBotMessage(analysis.feedback);
+        setState((prev) => ({
+          ...prev,
+          messages: [...prev.messages, defaultMessage],
+        }));
       }
     } catch (error) {
       console.error("Error in handleMessage:", error);
-      // 에러 발생 시 사용자에게 알림
-      const errorMessage = this.createChatBotMessage(
-        "죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요.",
-        {
-          widget: "options",
-        }
+      const errorMessage = createChatBotMessage(
+        "죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요."
       );
-      this.updateChatbotState(errorMessage);
+      setState((prev) => ({
+        ...prev,
+        messages: [...prev.messages, errorMessage],
+      }));
     }
-  }
+  };
 
-  // 오늘의 지출 내역을 조회하고 표시하는 함수
-  async handleTodayExpenses() {
-    // 오늘의 지출 내역 계산
-    const summary = await this.calculateExpenseSummary('today');
-    
-    // 지출 내역이 없는 경우 처리
+  // 오늘의 지출 내역 조회
+  const handleTodayExpenses = async () => {
+    addUserMessage("📊 오늘 지출 확인");
+
+    const summary = await calculateExpenseSummary('today');
+
     if (summary.total === 0) {
-      const message = this.createChatBotMessage(
-        "오늘은 아직 지출 내역이 없네요!",
-        {
-          widget: "options",
-        }
-      );
-      this.updateChatbotState(message);
+      addBotMessage("📊 오늘은 아직 지출 내역이 없네요!");
       return;
     }
-  
-    // 카테고리별, 항목별 지출 내역을 포맷팅하여 메시지 생성
-    const message = this.createChatBotMessage(
-      `오늘의 총 지출: ${summary.total.toLocaleString()}원\n\n` +
-      `카테고리별 지출:\n` +
+
+    const message = `📊 오늘의 총 지출: ${summary.total.toLocaleString()}원\n\n` +
+      `📈 카테고리별 지출:\n` +
       `${Object.entries(summary.byCategory)
-        .map(([category, amount]) => `${category}: ${amount.toLocaleString()}원`)
+        .map(([category, amount]) => `• ${category}: ${amount.toLocaleString()}원`)
         .join('\n')}\n\n` +
-      `상세 지출:\n` +
+      `📝 상세 지출:\n` +
       `${Object.entries(summary.bySubject)
-        .map(([subject, amount]) => `${subject}: ${amount.toLocaleString()}원`)
-        .join('\n')}`,
-      {
-        widget: "options",
-      }
-    );
-    this.updateChatbotState(message);
-  }
-  
-  // 이번 주의 지출 내역을 조회하고 표시하는 함수
-  async handleWeekExpenses() {
-    // 이번 주 지출 내역 계산
-    const summary = await this.calculateExpenseSummary('week');
-    
-    // 지출 내역이 없는 경우 처리
-    if (summary.total === 0) {
-      const message = this.createChatBotMessage(
-        "이번 주는 아직 지출 내역이 없네요!",
-        {
-          widget: "options",
-        }
-      );
-      this.updateChatbotState(message);
-      return;
-    }
-  
-    // 카테고리별 지출 내역을 포맷팅하여 메시지 생성
-    const message = this.createChatBotMessage(
-      `이번 주 총 지출: ${summary.total.toLocaleString()}원\n` +
-      `카테고리별 지출:\n` +
-      `${Object.entries(summary.byCategory)
-        .map(([category, amount]) => `${category}: ${amount.toLocaleString()}원`)
-        .join('\n')}`,
-      {
-        widget: "options",
-      }
-    );
-    this.updateChatbotState(message);
-  }
-  
-  // 이번 달의 지출 내역을 조회하고 표시하는 함수
-  async handleMonthExpenses() {
-    // 이번 달 지출 내역 계산
-    const summary = await this.calculateExpenseSummary('month');
-    
-    // 지출 내역이 없는 경우 처리
-    if (summary.total === 0) {
-      const message = this.createChatBotMessage(
-        "이번 달은 아직 지출 내역이 없네요!",
-        {
-          widget: "options",
-        }
-      );
-      this.updateChatbotState(message);
-      return;
-    }
-  
-    // 카테고리별 지출 내역을 포맷팅하여 메시지 생성
-    const message = this.createChatBotMessage(
-      `이번 달 총 지출: ${summary.total.toLocaleString()}원\n` +
-      `카테고리별 지출:\n` +
-      `${Object.entries(summary.byCategory)
-        .map(([category, amount]) => `${category}: ${amount.toLocaleString()}원`)
-        .join('\n')}`,
-      {
-        widget: "options",
-      }
-    );
-    this.updateChatbotState(message);
-  }
+        .map(([subject, amount]) => `• ${subject}: ${amount.toLocaleString()}원`)
+        .join('\n')}`;
 
-  // 이번 달 지출에 대한 분석 피드백을 생성하는 함수
-  async handleExpenseFeedback() {
+    addBotMessage(message);
+  };
+
+  // 이번 주 지출 내역 조회
+  const handleWeekExpenses = async () => {
+    addUserMessage("📅 이번 주 지출 확인");
+
+    const summary = await calculateExpenseSummary('week');
+
+    if (summary.total === 0) {
+      addBotMessage("📅 이번 주는 아직 지출 내역이 없네요!");
+      return;
+    }
+
+    const message = `📅 이번 주 총 지출: ${summary.total.toLocaleString()}원\n\n` +
+      `📈 카테고리별 지출:\n` +
+      `${Object.entries(summary.byCategory)
+        .map(([category, amount]) => `• ${category}: ${amount.toLocaleString()}원`)
+        .join('\n')}`;
+
+    addBotMessage(message);
+  };
+
+  // 이번 달 지출 내역 조회
+  const handleMonthExpenses = async () => {
+    addUserMessage("📈 이번 달 지출 확인");
+
+    const summary = await calculateExpenseSummary('month');
+
+    if (summary.total === 0) {
+      addBotMessage("📈 이번 달은 아직 지출 내역이 없네요!");
+      return;
+    }
+
+    const message = `📈 이번 달 총 지출: ${summary.total.toLocaleString()}원\n\n` +
+      `📊 카테고리별 지출:\n` +
+      `${Object.entries(summary.byCategory)
+        .map(([category, amount]) => `• ${category}: ${amount.toLocaleString()}원`)
+        .join('\n')}`;
+
+    addBotMessage(message);
+  };
+
+  // 지출 패턴 분석
+  const handleExpenseFeedback = async () => {
+    addUserMessage("🔍 지출 패턴 분석");
+
     try {
-      // 사용자 로그인 상태 확인
-      // 오류 대비 혹시 몰라 설정함
       const user = auth.currentUser;
       if (!user) {
-        this.updateChatbotState(this.createChatBotMessage(
-          "로그인이 필요한 서비스입니다.",
-          {
-            widget: "options",
-          }
-        ));
+        addBotMessage("로그인이 필요한 서비스입니다.");
         return;
       }
 
-      // 이번 달 지출 내역 조회
-      const monthSummary = await this.calculateExpenseSummary('month');
-      console.log('Month summary:', monthSummary);
+      const monthSummary = await calculateExpenseSummary('month');
 
-      // 지출 내역이 없는 경우 처리
       if (monthSummary.total === 0) {
-        this.updateChatbotState(this.createChatBotMessage(
-          "아직 이번 달 지출 내역이 없습니다.",
-          {
-            widget: "options",
-          }
-        ));
+        addBotMessage("아직 이번 달 지출 내역이 없습니다.");
         return;
       }
 
-      // 일평균 지출 계산
       const today = new Date();
       const daysInMonth = today.getDate();
       const dailyAverage = monthSummary.total / daysInMonth;
 
-      // API 요청 데이터 준비
       const requestData = {
         total: monthSummary.total,
         dailyAverage,
@@ -223,7 +173,6 @@ class ActionProvider {
         daysInMonth
       };
 
-      // API를 통해 지출 분석 요청
       const response = await fetch('https://moneychat-backend-17g5.onrender.com/api/analyze-spending', {
         method: 'POST',
         headers: {
@@ -237,7 +186,6 @@ class ActionProvider {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // 분석 결과를 포맷팅하여 표시
       const data = await response.json();
       const formattedFeedback = data.feedback
         .split(/(?:\d+\.\s)/)
@@ -245,56 +193,155 @@ class ActionProvider {
         .map(text => text.trim())
         .join('\n\n');
 
-      const feedbackMessage = this.createChatBotMessage(formattedFeedback,
-        {
-          widget: "options",
-        });
-      this.updateChatbotState(feedbackMessage);
-
+      addBotMessage(formattedFeedback);
     } catch (error) {
       console.error("Error getting feedback:", error);
-      const errorMessage = this.createChatBotMessage(
-        "죄송합니다. 피드백을 생성하는 중 문제가 발생했어요. 다시 시도해주세요.",
-        {
-          widget: "options",
-        }
-      );
-      this.updateChatbotState(errorMessage);
+      addBotMessage("죄송합니다. 피드백을 생성하는 중 문제가 발생했어요. 다시 시도해주세요.");
     }
-  }
+  };
 
-  // 새로운 지출 내역을 데이터베이스에 저장하는 함수
-  async saveExpense(subject, category, amount) {
-    // 사용자 인증 확인
+  // 이번 달 지출 상세 조회
+  const handleMonthDetailExpenses = async () => {
+    addUserMessage("📋 이번 달 지출 상세");
+
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userDocRef = doc(db, 'expenses', user.uid);
+      const userExpensesRef = collection(userDocRef, 'userExpenses');
+
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startTimestamp = Timestamp.fromDate(startOfMonth);
+
+      const q = query(
+        userExpensesRef,
+        where('timestamp', '>=', startTimestamp),
+        orderBy('timestamp', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        addBotMessage("이번 달에 입력된 지출 내역이 없습니다. 💸");
+        return;
+      }
+
+      const expensesByDate = {};
+      let totalAmount = 0;
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const expenseDate = data.timestamp.toDate();
+        const dateKey = expenseDate.toLocaleDateString('ko-KR', {
+          month: 'long',
+          day: 'numeric'
+        });
+
+        if (!expensesByDate[dateKey]) {
+          expensesByDate[dateKey] = [];
+        }
+
+        expensesByDate[dateKey].push(data);
+        totalAmount += data.amount;
+      });
+
+      const monthName = now.toLocaleDateString('ko-KR', { month: 'long' });
+      let detailMessage = `📋 ${monthName}의 지출 상세 정보\n\n`;
+
+      Object.keys(expensesByDate).forEach(date => {
+        detailMessage += `📅 ${date}\n`;
+        expensesByDate[date].forEach(expense => {
+          detailMessage += `  • ${expense.category} / ${expense.subject} / ${expense.amount.toLocaleString()}원\n`;
+        });
+        detailMessage += '\n';
+      });
+
+      detailMessage += `💰 총 ${totalAmount.toLocaleString()}원`;
+      addBotMessage(detailMessage);
+
+    } catch (error) {
+      console.error("지출 상세 조회 실패:", error);
+      addBotMessage("지출 상세 조회 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  // 최근 지출 조회
+  const handleRecentExpense = async () => {
+    addUserMessage("🕒 최근 지출 알아보기");
+
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userDocRef = doc(db, 'expenses', user.uid);
+      const userExpensesRef = collection(userDocRef, 'userExpenses');
+
+      const q = query(
+        userExpensesRef,
+        orderBy('timestamp', 'desc'),
+        limit(1)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        addBotMessage("아직 입력된 지출 내역이 없습니다. 💸\n\n지출 내용을 자유롭게 입력해주세요!");
+        return;
+      }
+
+      const recentExpense = querySnapshot.docs[0].data();
+      const expenseDate = recentExpense.timestamp.toDate();
+
+      const formattedDate = expenseDate.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      const formattedTime = expenseDate.toLocaleTimeString('ko-KR', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+
+      const recentMessage = `🕒 가장 최근 지출 정보\n\n📅 ${formattedDate} ${formattedTime}\n💰 ${recentExpense.subject}(${recentExpense.category}) ${recentExpense.amount.toLocaleString()}원`;
+
+      addBotMessage(recentMessage);
+
+    } catch (error) {
+      console.error("최근 지출 조회 실패:", error);
+      addBotMessage("최근 지출 조회 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  // 지출 저장 함수
+  const saveExpense = async (subject, category, amount) => {
     const user = auth.currentUser;
     if (!user) return;
 
-    // 저장할 지출 데이터 준비
     const expenseData = {
-      subject, // 상세 지출 내용
-      category, // 지출 카테고리
-      amount, // 금액
-      timestamp: Timestamp.now(), // 시간
+      subject,
+      category,
+      amount,
+      timestamp: Timestamp.now(),
     };
 
-    // Firestore에 지출 데이터 저장
     const expensesRef = collection(db, 'expenses');
     const userDocRef = doc(expensesRef, user.uid);
     const userExpensesRef = collection(userDocRef, 'userExpenses');
     await addDoc(userExpensesRef, expenseData);
-  }
+  };
 
-  // 특정 기간의 지출 내역을 계산하고 요약하는 함수
-  async calculateExpenseSummary(period) {
-    // 사용자 인증 확인
+  // 지출 요약 계산 함수
+  const calculateExpenseSummary = async (period) => {
     const user = auth.currentUser;
     if (!user) return { total: 0, byCategory: {}, bySubject: {} };
 
-    // Firestore 참조 설정
     const userDocRef = doc(db, 'expenses', user.uid);
     const userExpensesRef = collection(userDocRef, 'userExpenses');
 
-    // 조회 기간 설정
     let startDate = new Date();
     if (period === 'today') {
       startDate.setHours(0, 0, 0, 0);
@@ -306,12 +353,10 @@ class ActionProvider {
       startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
     }
 
-    // 해당 기간의 지출 데이터 조회
     const startTimestamp = Timestamp.fromDate(startDate);
     const q = query(userExpensesRef, where('timestamp', '>=', startTimestamp));
     const snapshot = await getDocs(q);
 
-    // 지출 내역 집계
     let total = 0;
     const byCategory = {};
     const bySubject = {};
@@ -324,16 +369,25 @@ class ActionProvider {
     });
 
     return { total, byCategory, bySubject };
-  }
+  };
 
-  // 챗봇의 상태를 업데이트하고 새 메시지를 추가하는 함수
-  updateChatbotState(message) {
-    // 이전 상태를 유지하면서 새 메시지 추가
-    this.setState((prevState) => ({
-      ...prevState,
-      messages: [...prevState.messages, message],
-    }));
-  }
-}
+  return (
+    <div>
+      {React.Children.map(children, (child) => {
+        return React.cloneElement(child, {
+          actions: {
+            handleMessage,
+            handleTodayExpenses,
+            handleWeekExpenses,
+            handleMonthExpenses,
+            handleExpenseFeedback,
+            handleMonthDetailExpenses,
+            handleRecentExpense,
+          },
+        });
+      })}
+    </div>
+  );
+};
 
 export default ActionProvider;

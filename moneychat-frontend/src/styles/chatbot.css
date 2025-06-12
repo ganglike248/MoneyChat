@@ -61,6 +61,14 @@
     height: 100%;
 }
 
+.react-chatbot-kit-user-chat-message-arrow {
+    display: none !important;
+}
+
+.react-chatbot-kit-chat-bot-message-arrow {
+    display: none !important;
+}
+
 .react-chatbot-kit-chat-header {
     background-color: #4299e1;
     color: white;
@@ -119,7 +127,7 @@
 }
 
 .react-chatbot-kit-chat-btn-send {
-    background-color: #4299e1 !important;
+    background-color: #4299e1;
     border: none;
     border-radius: 8px;
     width: 40px;
@@ -161,6 +169,7 @@
     font-size: 0.875rem;
     flex-shrink: 0;
     color: white;
+    margin: 0;
 }
 
 .react-chatbot-kit-user-avatar-container {
@@ -176,10 +185,11 @@
 .react-chatbot-kit-chat-bot-message {
     max-width: 70%;
     padding: 0.75rem 1rem;
-    border-radius: 12px;
     font-size: 0.875rem;
     line-height: 1.5;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    margin-right: 0.5rem !important;
+    margin-top: 17px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
 .react-chatbot-kit-chat-bot-message {
@@ -195,12 +205,19 @@
     width: 100%;
     max-width: 100%;
     margin-left: 0;
+    border-radius: 0px 12px 12px 12px !important;
 }
 
 .react-chatbot-kit-user-chat-message {
     background-color: #4299e1;
     color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
     border-top-right-radius: 4px;
+    max-width: 70%;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .react-chatbot-kit-chat-bot-message p {
@@ -259,7 +276,7 @@
     }
 
     .options-container {
-        max-width: 65%;    
+        max-width: 65%;
     }
 
     .option-button {
@@ -276,4 +293,272 @@
         width: 28px;
         height: 28px;
     }
+}
+
+/* 메뉴 버튼 스타일 */
+.custom-chat-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: white;
+    border-top: 1px solid #e2e8f0;
+}
+
+.menu-button-container {
+    position: relative;
+}
+
+.menu-toggle-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+    color: #4a5568;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-toggle-button:hover {
+    background-color: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.menu-dropdown {
+    position: absolute;
+    bottom: 50px;
+    left: 0;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    min-width: 280px;
+    z-index: 1000;
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+    border-radius: 12px 12px 0 0;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.menu-close-button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #718096;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.menu-close-button:hover {
+    background-color: #e2e8f0;
+    color: #2d3748;
+}
+
+.menu-options {
+    padding: 0.5rem;
+}
+
+.menu-option-button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    background-color: transparent;
+    color: #2d3748;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    text-align: left;
+    margin-bottom: 0.25rem;
+}
+
+.menu-option-button:hover {
+    background-color: #f7fafc;
+    color: #4299e1;
+    transform: translateX(4px);
+}
+
+.menu-option-button:last-child {
+    margin-bottom: 0;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 640px) {
+    .menu-dropdown {
+        min-width: 260px;
+        left: -10px;
+    }
+
+    .menu-option-button {
+        font-size: 0.8rem;
+        padding: 0.6rem 0.8rem;
+    }
+}
+
+/* 커스텀 메뉴 버튼 스타일 */
+.custom-menu-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: none;
+    /* 테두리 제거 */
+    background-color: #4299e1;
+    /* 메시지 전송 버튼과 같은 색상 */
+    color: white;
+    /* 아이콘 색상을 흰색으로 변경 */
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* 그림자 추가 */
+}
+
+.custom-menu-button:hover {
+    background-color: #3182ce;
+    transform: translateY(-1px);
+}
+
+/* 메뉴 드롭다운 */
+.menu-dropdown {
+    position: absolute;
+    bottom: 70px;
+    left: 20px;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    min-width: 280px;
+    z-index: 1000;
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+    border-radius: 12px 12px 0 0;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.menu-close-button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #718096;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.menu-close-button:hover {
+    background-color: #e2e8f0;
+    color: #2d3748;
+}
+
+.menu-options {
+    padding: 0.5rem;
+}
+
+.menu-option-button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    background-color: transparent;
+    color: #2d3748;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    text-align: left;
+    margin-bottom: 0.25rem;
+}
+
+.menu-option-button:hover {
+    background-color: #f7fafc;
+    color: #4299e1;
+    transform: translateX(4px);
+}
+
+.menu-option-button:last-child {
+    margin-bottom: 0;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 640px) {
+    .menu-dropdown {
+        min-width: 260px;
+        left: 10px;
+    }
+
+    .menu-option-button {
+        font-size: 0.8rem;
+        padding: 0.6rem 0.8rem;
+    }
+}
+
+.react-chatbot-kit-user-chat-message-container {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0.5rem 0;
 }
