@@ -84,7 +84,10 @@ npm install react-router-dom react-firebase-hooks
 - 최근 지출 알아보기: 가장 마지막으로 입력된 지출에 대한 정보(시간, 내용, 카테고리, 금액) 확인 가능
 - 챗봇 메시지의 디자인 개선
 
+2025.06.13(v1.1.1)
+-README 수정
+
 
 <다음 작업>
 
-- README 수정
+-
