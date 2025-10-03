@@ -87,6 +87,9 @@ npm install react-router-dom react-firebase-hooks
 2025.06.13(v1.1.1)
 -README 수정
 
+2025.10.04(v1.1.2)
+-설명서 수정
+
 
 <다음 작업>
 
