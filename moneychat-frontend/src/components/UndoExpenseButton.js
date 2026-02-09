@@ -17,7 +17,7 @@ const UndoExpenseButton = (props) => {
 
     return (
         <button className="expense-undo-button" onClick={handleUndo} type="button">
-            [취소하기]
+            취소하기
         </button>
     );
 };
