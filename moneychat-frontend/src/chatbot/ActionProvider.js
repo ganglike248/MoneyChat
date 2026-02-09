@@ -1,9 +1,20 @@
 import React from 'react';
 import { db, auth } from '../firebase/firebaseConfig';
-import { collection, doc, addDoc, getDocs, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, addDoc, getDocs, query, where, Timestamp, orderBy, limit, deleteDoc } from 'firebase/firestore';
 
 // 함수형 컴포넌트로 완전히 변경
 const ActionProvider = ({ createChatBotMessage, setState, children }) => {
+
+  // 취소 버튼 중복 방지
+  const clearPreviousWidgets = (messages) => {
+    return messages.map((msg) => {
+      if (msg.widget === 'expenseUndo') {
+        const { widget, ...rest } = msg;
+        return rest;
+      }
+      return msg;
+    });
+  };
 
   // 사용자 메시지를 수동으로 생성하는 함수
   const addUserMessage = (message) => {
@@ -15,16 +26,16 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
 
     setState((prev) => ({
       ...prev,
-      messages: [...prev.messages, userMessage],
+      messages: [...clearPreviousWidgets(prev.messages), userMessage],
     }));
   };
 
   // 봇 메시지 추가 헬퍼 함수
-  const addBotMessage = (message) => {
-    const botMessage = createChatBotMessage(message);
+  const addBotMessage = (message, options = {}) => { // 💡 options 매개변수 추가
+    const botMessage = createChatBotMessage(message, options); // 💡 options 전달
     setState((prev) => ({
       ...prev,
-      messages: [...prev.messages, botMessage],
+      messages: [...clearPreviousWidgets(prev.messages), botMessage],
     }));
   };
 
@@ -51,32 +62,23 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
 
       const analysis = await response.json();
 
+      // 분석 결과가 지출 내역을 포함하고 있다면
       if (analysis.hasExpense && analysis.amount && analysis.category) {
         await saveExpense(analysis.subject, analysis.category, analysis.amount);
 
-        const responseMessage = createChatBotMessage(
-          `${analysis.subject}(${analysis.category}) 항목에 ${analysis.amount.toLocaleString()}원을 지출하셨네요!\n${analysis.feedback}`
+        addBotMessage(
+          `${analysis.subject}(${analysis.category}) 항목에 ${analysis.amount.toLocaleString()}원을 지출하셨네요!\n${analysis.feedback}`,
+          {
+            widget: 'expenseUndo',
+          }
         );
-        setState((prev) => ({
-          ...prev,
-          messages: [...prev.messages, responseMessage],
-        }));
       } else {
-        const defaultMessage = createChatBotMessage(analysis.feedback);
-        setState((prev) => ({
-          ...prev,
-          messages: [...prev.messages, defaultMessage],
-        }));
+        // 지출 내역이 아닌 경우 일반 피드백 메시지만 출력
+        addBotMessage(analysis.feedback);
       }
     } catch (error) {
       console.error("Error in handleMessage:", error);
-      const errorMessage = createChatBotMessage(
-        "죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요."
-      );
-      setState((prev) => ({
-        ...prev,
-        messages: [...prev.messages, errorMessage],
-      }));
+      addBotMessage("죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요.");
     }
   };
 
@@ -316,6 +318,41 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
     }
   };
 
+  // 가장 최근 지출 1건 취소
+  const handleUndoRecentExpense = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        addBotMessage("로그인이 필요한 서비스입니다.");
+        return;
+      }
+
+      const userDocRef = doc(db, 'expenses', user.uid);
+      const userExpensesRef = collection(userDocRef, 'userExpenses');
+
+      const q = query(
+        userExpensesRef,
+        orderBy('timestamp', 'desc'),
+        limit(1)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        addBotMessage("취소할 최근 지출 내역이 없습니다.");
+        return;
+      }
+
+      const recentExpenseDoc = querySnapshot.docs[0];
+      await deleteDoc(recentExpenseDoc.ref);
+
+      addBotMessage("지출 입력이 취소되었습니다.");
+    } catch (error) {
+      console.error("최근 지출 취소 실패:", error);
+      addBotMessage("최근 지출 취소 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
+  };
+
   // 지출 저장 함수
   const saveExpense = async (subject, category, amount) => {
     const user = auth.currentUser;
@@ -383,6 +420,7 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
             handleExpenseFeedback,
             handleMonthDetailExpenses,
             handleRecentExpense,
+            handleUndoRecentExpense,
           },
         });
       })}

@@ -36,7 +36,7 @@ const LoginPage = () => {
                     }}
                 />
                 <h2 style={{ marginTop: '0' }}>MoneyChat</h2>
-                <p style={{margin: '0'}}>v1.1.0</p>
+                <p style={{margin: '0'}}>v1.1.4</p>
                 <h5>머니챗과 함께 하루를 기록해보세요!</h5>
                 <form onSubmit={handleLogin} className='LoginPage_LoginForm'>
                     <div className='LoginPage_Logininput'>

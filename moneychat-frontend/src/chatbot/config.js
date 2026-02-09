@@ -1,5 +1,6 @@
 import { createChatBotMessage } from 'react-chatbot-kit';
 import LoadingSpinner from '../components/LoadingSpinner';
+import UndoExpenseButton from '../components/UndoExpenseButton';
 
 const config = {
   initialMessages: [
@@ -12,6 +13,10 @@ const config = {
     {
       widgetName: "loading",
       widgetFunc: (props) => <LoadingSpinner {...props} />,
+    },
+    {
+      widgetName: "expenseUndo",
+      widgetFunc: (props) => <UndoExpenseButton {...props} />,
     },
   ],
 
