@@ -5,7 +5,7 @@ import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import ChatbotPage from './components/ChatbotPage';
 
-const BACKEND_BASE_URL = 'https://moneychat-backend-17g5.onrender.com';
+export const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://moneychat-backend-17g5.onrender.com';
 
 function App() {
   useEffect(() => {

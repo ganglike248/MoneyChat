@@ -565,17 +565,10 @@
 
 .expense-undo-button {
     margin-left: 2.5rem;
-    padding: 1px 4px;
-    border: 2px solid #e53e3e;
+    border: none;
     background: transparent;
     border-radius: 10px;
     color: #e53e3e;
     font-size: 0.75rem;
     cursor: pointer;
-}
-
-.expense-undo-button:hover {
-    color: white;
-    border: 2px solid #ff7272;
-    background: #ff7272;
 }

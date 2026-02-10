@@ -1,6 +1,7 @@
 import React from 'react';
 import { db, auth } from '../firebase/firebaseConfig';
 import { collection, doc, addDoc, getDocs, query, where, Timestamp, orderBy, limit, deleteDoc } from 'firebase/firestore';
+import { BACKEND_BASE_URL } from '../App';
 
 // 함수형 컴포넌트로 완전히 변경
 const ActionProvider = ({ createChatBotMessage, setState, children }) => {
@@ -43,11 +44,12 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
   const handleMessage = async (message) => {
     console.log("ActionProvider handling message:", message);
     try {
-      if (!message.trim()) {
-        throw new Error('메시지가 비어있습니다.');
+      if (!message || !message.trim()) {
+        addBotMessage("⚠️ 메시지를 입력해주세요!");
+        return; // 여기서 return하면 빈 메시지 처리 중단
       }
 
-      const response = await fetch('https://moneychat-backend-17g5.onrender.com/api/analyze-message', {
+      const response = await fetch(`${BACKEND_BASE_URL}/api/analyze-message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

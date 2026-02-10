@@ -8,17 +8,39 @@ import '../styles/LoginPage.css';
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     // 로그인
     const handleLogin = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
         try {
-            // 모듈식으로 signInWithEmailAndPassword 호출
             await signInWithEmailAndPassword(auth, email, password);
-            navigate('/chatbot'); // 챗봇 화면으로 이동
+            navigate('/chatbot');
         } catch (error) {
-            alert('로그인 실패: ' + error.message);
+            let errorMessage = '로그인 실패: ';
+
+            switch (error.code) {
+                case 'auth/invalid-email':
+                    errorMessage += '올바른 이메일 형식이 아닙니다.';
+                    break;
+                case 'auth/user-not-found':
+                    errorMessage += '존재하지 않는 계정입니다.';
+                    break;
+                case 'auth/wrong-password':
+                    errorMessage += '비밀번호가 틀렸습니다.';
+                    break;
+                case 'auth/too-many-requests':
+                    errorMessage += '너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
+                    break;
+                default:
+                    errorMessage += error.message;
+            }
+
+            alert(errorMessage);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -36,8 +58,7 @@ const LoginPage = () => {
                     }}
                 />
                 <h2 style={{ marginTop: '0' }}>MoneyChat</h2>
-                <p style={{margin: '0'}}>v1.1.4</p>
-                <h5>머니챗과 함께 하루를 기록해보세요!</h5>
+                <h5 style={{ marginTop: '0' }}>머니챗과 함께 쉽고 빠르게 지출을 기록해보세요!</h5>
                 <form onSubmit={handleLogin} className='LoginPage_LoginForm'>
                     <div className='LoginPage_Logininput'>
                         <input
@@ -54,7 +75,13 @@ const LoginPage = () => {
                             onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>
-                    <button className='LoginPage_LoginBtn' type="submit">로그인</button>
+                    <button
+                        className='LoginPage_LoginBtn'
+                        type="submit"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? '로그인 중...' : '로그인'}
+                    </button>
                 </form>
                 <button className='LoginPage_signupBtn' onClick={() => navigate('/signup')}>회원가입</button>
             </div>

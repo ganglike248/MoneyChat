@@ -73,6 +73,14 @@ app.post('/api/analyze-message', async (req, res) => {
         }
 
         const { message } = req.body;
+
+        if (!message || typeof message !== 'string' || !message.trim()) {
+            return res.status(400).json({
+                error: 'Invalid input',
+                message: 'Message is required and must be a non-empty string'
+            });
+        }
+
         console.log('Analyzing message:', message);
 
         // GPT-3.5 모델을 사용하여 메시지 분석
@@ -152,8 +160,8 @@ app.post('/api/analyze-spending', async (req, res) => {
                 - 경과 일수: ${daysInMonth}일
                 - 카테고리별 지출:
                 ${Object.entries(byCategory)
-                                        .map(([category, amount]) => `  - ${category}: ${amount.toLocaleString()}원`)
-                                        .join('\n')}
+                        .map(([category, amount]) => `  - ${category}: ${amount.toLocaleString()}원`)
+                        .join('\n')}
 
                 다음 사항을 포함하여 간단히 각 주제에 대해 1~2줄 정도로 분석해주세요:
                 1. 현재 지출 패턴의 특징
