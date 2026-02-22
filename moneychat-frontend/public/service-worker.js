@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moneychat-v1.1.7'; 
+const CACHE_NAME = 'moneychat-v1.1.8'; 
 
 const urlsToCache = [
     '/',
