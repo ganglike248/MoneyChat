@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { db, auth } from '../firebase/firebaseConfig';
 import { collection, doc, addDoc, getDocs, query, where, Timestamp, orderBy, limit, deleteDoc } from 'firebase/firestore';
 import { BACKEND_BASE_URL } from '../App';
 
 // 함수형 컴포넌트로 완전히 변경
 const ActionProvider = ({ createChatBotMessage, setState, children }) => {
+
+  // 로딩 타이머를 관리하기 위한 Ref 추가
+  const loadingTimerRef = useRef(null);
+
+  // 컴포넌트 언마운트 시 메모리 누수를 막기 위해 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
+    };
+  }, []);
 
   // 취소 버튼 중복 방지
   const clearPreviousWidgets = (messages) => {
@@ -31,23 +41,72 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
     }));
   };
 
-  // 봇 메시지 추가 헬퍼 함수
-  const addBotMessage = (message, options = {}) => { // 💡 options 매개변수 추가
-    const botMessage = createChatBotMessage(message, options); // 💡 options 전달
+  // 💡 [핵심 기능] 단계별 로딩 메시지 표시 함수
+  const showLoading = () => {
+    const loadingId = 'loading-msg';
+    const initialMsg = createChatBotMessage("⏳ 서버와 통신 중...", { id: loadingId });
+
     setState((prev) => ({
       ...prev,
-      messages: [...clearPreviousWidgets(prev.messages), botMessage],
+      messages: [...clearPreviousWidgets(prev.messages), initialMsg],
     }));
+
+    let step = 0;
+    // 1.2초마다 메시지 텍스트를 동적으로 변경합니다.
+    loadingTimerRef.current = setInterval(() => {
+      step++;
+      setState((prev) => {
+        const newMessages = [...prev.messages];
+        const loadingMsgIndex = newMessages.findIndex(msg => msg.id === loadingId);
+
+        if (loadingMsgIndex !== -1) {
+           let newText = "⏳ 서버와 통신 중...";
+           if (step === 1) newText = "🧠 AI가 생각하는 중...";
+           if (step >= 2) newText = "💡 생각을 정리하는 중...";
+
+           // 기존 메시지 객체의 텍스트만 교체
+           newMessages[loadingMsgIndex] = { ...newMessages[loadingMsgIndex], message: newText };
+        } else {
+           // 로딩 메시지가 지워졌다면 타이머 중지
+           if (loadingTimerRef.current) clearInterval(loadingTimerRef.current);
+        }
+        return { ...prev, messages: newMessages };
+      });
+    }, 1200); 
+  };
+
+  // 로딩 메시지 강제 제거 함수
+  const removeLoading = (messages) => {
+    if (loadingTimerRef.current) {
+      clearInterval(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
+    return messages.filter((msg) => msg.id !== "loading-msg");
+  };
+
+  // 봇 메시지 추가 헬퍼 함수 (로딩 메시지 자동 제거 기능 통합)
+  const addBotMessage = (message, options = {}) => { 
+    const botMessage = createChatBotMessage(message, options);
+    setState((prev) => {
+      const cleanedMessages = clearPreviousWidgets(prev.messages);
+      const withoutLoading = removeLoading(cleanedMessages);
+      return {
+        ...prev,
+        messages: [...withoutLoading, botMessage],
+      }
+    });
   };
 
   // 사용자 입력 메시지를 분석하고 처리하는 함수
   const handleMessage = async (message) => {
-    console.log("ActionProvider handling message:", message);
     try {
       if (!message || !message.trim()) {
         addBotMessage("⚠️ 메시지를 입력해주세요!");
-        return; // 여기서 return하면 빈 메시지 처리 중단
+        return; 
       }
+
+      // 🚀 사용자가 메시지를 입력한 직후 바로 로딩 시작!
+      showLoading();
 
       const response = await fetch(`${BACKEND_BASE_URL}/api/analyze-message`, {
         method: 'POST',
@@ -75,7 +134,6 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
           }
         );
       } else {
-        // 지출 내역이 아닌 경우 일반 피드백 메시지만 출력
         addBotMessage(analysis.feedback);
       }
     } catch (error) {
@@ -87,6 +145,7 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
   // 오늘의 지출 내역 조회
   const handleTodayExpenses = async () => {
     addUserMessage("📊 오늘 지출 확인");
+    showLoading(); // 🚀 로딩 시작
 
     const summary = await calculateExpenseSummary('today');
 
@@ -111,6 +170,7 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
   // 이번 주 지출 내역 조회
   const handleWeekExpenses = async () => {
     addUserMessage("📅 이번 주 지출 확인");
+    showLoading(); // 🚀 로딩 시작
 
     const summary = await calculateExpenseSummary('week');
 
@@ -131,6 +191,7 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
   // 이번 달 지출 내역 조회
   const handleMonthExpenses = async () => {
     addUserMessage("📈 이번 달 지출 확인");
+    showLoading(); // 🚀 로딩 시작
 
     const summary = await calculateExpenseSummary('month');
 
@@ -151,6 +212,7 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
   // 지출 패턴 분석
   const handleExpenseFeedback = async () => {
     addUserMessage("🔍 지출 패턴 분석");
+    showLoading(); // 🚀 로딩 시작
 
     try {
       const user = auth.currentUser;
@@ -207,6 +269,7 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
   // 이번 달 지출 상세 조회
   const handleMonthDetailExpenses = async () => {
     addUserMessage("📋 이번 달 지출 상세");
+    showLoading(); // 🚀 로딩 시작
 
     try {
       const user = auth.currentUser;
@@ -274,6 +337,7 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
   // 최근 지출 조회
   const handleRecentExpense = async () => {
     addUserMessage("🕒 최근 지출 알아보기");
+    showLoading(); // 🚀 로딩 시작
 
     try {
       const user = auth.currentUser;
@@ -322,6 +386,8 @@ const ActionProvider = ({ createChatBotMessage, setState, children }) => {
 
   // 가장 최근 지출 1건 취소
   const handleUndoRecentExpense = async () => {
+    showLoading(); // 🚀 로딩 시작
+
     try {
       const user = auth.currentUser;
       if (!user) {

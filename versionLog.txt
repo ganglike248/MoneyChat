@@ -78,7 +78,10 @@ npm install react-router-dom react-firebase-hooks
 - 로그인 로딩 중 상태 표시 추가
 
 2026.02.22(v1.1.6)
-- 업데이트 후 페이지 접속 시, 흰화면만 보이던 문제 해결 시도
+- 업데이트 후 페이지 접속 시, 흰화면만 보이던 문제 해결 완료
+
+2026.02.22(v1.1.7)
+- 챗봇 로딩 메시지 개선
 
 <다음 작업>
 
@@ -92,7 +95,7 @@ npm install react-router-dom react-firebase-hooks
 LoginPage의 버전 수정
 
 프론트 빌드
-- 프론트 폴더에서
+- 프론트 폴더에서 package-lock.json, package.json, service-worker.js에서 버전 변경하기
 - npm run build
 - firebase deploy
 
