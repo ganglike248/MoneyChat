@@ -77,6 +77,9 @@ npm install react-router-dom react-firebase-hooks
 - 로그인 에러 메시지 개선
 - 로그인 로딩 중 상태 표시 추가
 
+2026.02.22(v1.1.6)
+- 업데이트 후 페이지 접속 시, 흰화면만 보이던 문제 해결 시도
+
 <다음 작업>
 
 -
