@@ -14,8 +14,10 @@ const MAX_PAST_DAYS = 365;
 const CATEGORIES = ['식사', '카페', '간식', '교통', '쇼핑', '패션', '문화', '의료', '교육', '생활', '주거', '통신', '경조사', '기타'];
 
 // 챗봇이 이해하는 사용자 의도
-const INTENTS = ['expense', 'summary', 'detail', 'recent', 'feedback', 'chat'];
-const PERIODS = ['today', 'week', 'month'];
+const INTENTS = ['expense', 'summary', 'detail', 'recent', 'feedback', 'budget', 'chat'];
+// 요약 조회 기간 / 상세 조회 기간
+const PERIODS = ['today', 'week', 'month', 'lastMonth'];
+const DETAIL_PERIODS = ['month', 'lastMonth'];
 
 // YYYY-MM-DD 문자열을 UTC 기준 날짜로 변환 (날짜 차이 계산용)
 const parseDateString = (value) => {
@@ -59,13 +61,23 @@ const normalizeAnalysis = (raw, today) => {
         .slice(0, MAX_EXPENSES_PER_MESSAGE);
 
     if (expenses.length > 0) {
-        return { intent: 'expense', period: null, expenses, feedback };
+        return { intent: 'expense', period: null, expenses, budget: null, feedback };
     }
 
-    const intent = INTENTS.includes(raw?.intent) && raw.intent !== 'expense' ? raw.intent : 'chat';
-    const period = intent === 'summary' ? (PERIODS.includes(raw?.period) ? raw.period : 'today') : null;
+    let intent = INTENTS.includes(raw?.intent) && raw.intent !== 'expense' ? raw.intent : 'chat';
 
-    return { intent, period, expenses: [], feedback };
+    let period = null;
+    if (intent === 'summary') period = PERIODS.includes(raw?.period) ? raw.period : 'today';
+    if (intent === 'detail') period = DETAIL_PERIODS.includes(raw?.period) ? raw.period : 'month';
+
+    // 예산: 양수면 설정, 0이면 해제, 그 외에는 금액을 알 수 없으므로 일반 대화로 처리
+    let budget = null;
+    if (intent === 'budget') {
+        budget = raw?.budget === 0 || raw?.budget === '0' ? 0 : toAmount(raw?.budget);
+        if (budget === null) intent = 'chat';
+    }
+
+    return { intent, period, expenses: [], budget, feedback };
 };
 
 // 이전 대화 검증: 역할과 길이를 제한해서 GPT에 전달
@@ -85,6 +97,7 @@ module.exports = {
     CATEGORIES,
     INTENTS,
     PERIODS,
+    DETAIL_PERIODS,
     parseDateString,
     normalizeExpenseDate,
     normalizeAnalysis,

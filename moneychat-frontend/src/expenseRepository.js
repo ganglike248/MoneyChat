@@ -1,7 +1,8 @@
 // /src/expenseRepository.js
 // Firestore 지출 데이터 접근 (expenses/{uid}/userExpenses/{expenseId})
+// 월 예산은 사용자 문서(users/{uid})의 monthlyBudget 필드에 저장
 import { db, auth } from './firebase/firebaseConfig';
-import { collection, doc, getDocs, query, where, orderBy, limit, Timestamp, writeBatch, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, query, where, orderBy, limit, Timestamp, writeBatch, updateDoc } from 'firebase/firestore';
 
 export const LOGIN_REQUIRED_MESSAGE = "로그인이 필요한 서비스입니다.";
 
@@ -54,11 +55,35 @@ export const updateExpense = async (id, { date, ...fields }) => {
   await updateDoc(doc(getUserExpensesRef(), id), update);
 };
 
-// 특정 시각 이후의 지출 (최신순)
-export const fetchExpensesSince = async (startDate) => {
-  const q = query(getUserExpensesRef(), where('timestamp', '>=', Timestamp.fromDate(startDate)), orderBy('timestamp', 'desc'));
+// 기간 [start, end) 의 지출 (최신순, end가 없으면 현재까지)
+export const fetchExpensesInRange = async ({ start, end = null }) => {
+  const conditions = [where('timestamp', '>=', Timestamp.fromDate(start))];
+  if (end) conditions.push(where('timestamp', '<', Timestamp.fromDate(end)));
+
+  const q = query(getUserExpensesRef(), ...conditions, orderBy('timestamp', 'desc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(toExpense);
+};
+
+// 특정 시각 이후의 지출 (최신순)
+export const fetchExpensesSince = (startDate) => fetchExpensesInRange({ start: startDate });
+
+// 월 예산 (설정하지 않았으면 null)
+export const fetchBudget = async () => {
+  const user = auth.currentUser;
+  if (!user) throw new UserFacingError(LOGIN_REQUIRED_MESSAGE);
+
+  const snapshot = await getDoc(doc(db, 'users', user.uid));
+  const budget = snapshot.exists() ? snapshot.data().monthlyBudget : null;
+  return Number.isFinite(budget) && budget > 0 ? budget : null;
+};
+
+// 월 예산 저장 (null이면 예산 해제)
+export const saveBudget = async (budget) => {
+  const user = auth.currentUser;
+  if (!user) throw new UserFacingError(LOGIN_REQUIRED_MESSAGE);
+
+  await setDoc(doc(db, 'users', user.uid), { monthlyBudget: budget }, { merge: true });
 };
 
 export const fetchRecentExpense = async () => {

@@ -159,12 +159,13 @@ app.post('/api/analyze-message', requireAuth, apiLimiter, async (req, res) => {
 
                 의도(intent) 규칙:
                 - expense: 지출을 기록하려는 메시지
-                - summary: 오늘/이번 주/이번 달에 얼마 썼는지 묻는 메시지 (period: today, week, month 중 하나)
-                - detail: 이번 달 지출 내역을 자세히 보고 싶어 하는 메시지
+                - summary: 오늘/이번 주/이번 달/지난달에 얼마 썼는지 묻는 메시지 (period: today, week, month, lastMonth 중 하나)
+                - detail: 지출 내역을 자세히 보고 싶어 하는 메시지 (period: 이번 달이면 month, 지난달이면 lastMonth)
                 - recent: 가장 최근 지출을 묻는 메시지
                 - feedback: 지출 패턴 분석이나 소비 조언을 원하는 메시지
+                - budget: 한 달 예산을 정하거나 바꾸는 메시지 (budget: 원 단위 양의 정수, 예산을 없애달라고 하면 0)
                 - chat: 그 외 일상적인 대화
-                summary, detail, recent, feedback일 때는 사용자의 지출 데이터를 모르므로 금액을 지어내지 말고, feedback은 짧게 작성
+                summary, detail, recent, feedback, budget일 때는 사용자의 지출 데이터를 모르므로 금액을 지어내지 말고, feedback은 짧게 작성
 
                 일상적인 대화 규칙:
                 1. 자연스럽고 친근한 톤으로 응답
@@ -173,9 +174,10 @@ app.post('/api/analyze-message', requireAuth, apiLimiter, async (req, res) => {
 
                 응답은 다음 JSON 형식으로 제공:
                 {
-                    "intent": "expense" | "summary" | "detail" | "recent" | "feedback" | "chat",
-                    "period": "today" | "week" | "month" | null,
+                    "intent": "expense" | "summary" | "detail" | "recent" | "feedback" | "budget" | "chat",
+                    "period": "today" | "week" | "month" | "lastMonth" | null,
                     "expenses": [{ "subject": string, "category": string, "amount": number, "date": "YYYY-MM-DD" }],
+                    "budget": number | null,
                     "feedback": string
                 }`
             },
@@ -205,14 +207,15 @@ app.post('/api/analyze-message', requireAuth, apiLimiter, async (req, res) => {
 app.post('/api/analyze-spending', requireAuth, apiLimiter, async (req, res) => {
     try {
         // 필요한 데이터 추출
-        const { total, dailyAverage, byCategory, daysInMonth } = req.body;
+        const { total, dailyAverage, byCategory, daysInMonth, budget } = req.body;
 
         // 필수 데이터 검증
         const isValidCategories = byCategory && typeof byCategory === 'object' && !Array.isArray(byCategory)
             && Object.values(byCategory).every(isNonNegativeNumber);
 
         if (!isNonNegativeNumber(total) || !isNonNegativeNumber(dailyAverage) || !isValidCategories
-            || !Number.isInteger(daysInMonth) || daysInMonth < 1 || daysInMonth > 31) {
+            || !Number.isInteger(daysInMonth) || daysInMonth < 1 || daysInMonth > 31
+            || (budget !== undefined && budget !== null && !isNonNegativeNumber(budget))) {
             return res.status(400).json({ error: 'Invalid spending data' });
         }
 
@@ -229,7 +232,7 @@ app.post('/api/analyze-spending', requireAuth, apiLimiter, async (req, res) => {
                 - 이번 달 총 지출: ${total.toLocaleString()}원
                 - 일일 평균 지출: ${Math.round(dailyAverage).toLocaleString()}원
                 - 경과 일수: ${daysInMonth}일
-                - 카테고리별 지출:
+${budget ? `                - 이번 달 예산: ${budget.toLocaleString()}원 (남은 금액: ${(budget - total).toLocaleString()}원)\n` : ''}                - 카테고리별 지출:
                 ${Object.entries(byCategory)
                         .map(([category, amount]) => `  - ${category}: ${amount.toLocaleString()}원`)
                         .join('\n')}

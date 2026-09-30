@@ -4,6 +4,7 @@ import { auth } from '../firebase/firebaseConfig';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'; // 모듈식으로 가져옴
 import { useNavigate } from 'react-router-dom';
 import { getAuthErrorMessage } from '../authErrors';
+import PasswordInput from './PasswordInput';
 import '../styles/LoginPage.css';
 
 const LoginPage = () => {
@@ -71,16 +72,7 @@ const LoginPage = () => {
     return (
         <div className='LoginPage_container'>
             <div className='LoginPage_subContainer'>
-                <img
-                    src="/logo.png"
-                    alt="MoneyChat Avatar"
-                    style={{
-                        width: '40%',
-                        height: '40%',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                    }}
-                />
+                <img src="/logo.png" alt="MoneyChat" className="auth_logo" />
                 <h2 style={{ marginTop: '0' }}>MoneyChat</h2>
                 <h5 style={{ marginTop: '0' }}>머니챗과 함께 쉽고 빠르게 지출을 기록해보세요!</h5>
                 <form onSubmit={handleLogin} className='LoginPage_LoginForm'>
@@ -93,8 +85,7 @@ const LoginPage = () => {
                             autoComplete="email"
                             required
                         />
-                        <input
-                            type="password"
+                        <PasswordInput
                             placeholder="비밀번호"
                             className='LoginPage_password'
                             value={password}

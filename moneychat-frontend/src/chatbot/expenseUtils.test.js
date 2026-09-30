@@ -1,7 +1,68 @@
 import {
   getPeriodStart, toAmount, summarizeExpenses, isValidExpenseItem, formatFeedback,
   toLocalDateString, expenseDateFromString, buildChatHistory, toPersistableMessages,
+  getMonthRange, getPeriodRange, formatMonthLabel, getBudgetStatus, formatBudgetLine, toCategoryRows,
 } from './expenseUtils';
+
+describe('getPeriodRange / getMonthRange', () => {
+  test('지난달은 지난달 1일부터 이번 달 1일 전까지', () => {
+    expect(getPeriodRange('lastMonth', new Date(2026, 8, 30))).toEqual({
+      start: new Date(2026, 7, 1),
+      end: new Date(2026, 8, 1),
+    });
+  });
+
+  test('1월의 지난달은 작년 12월', () => {
+    expect(getPeriodRange('lastMonth', new Date(2026, 0, 15))).toEqual({
+      start: new Date(2025, 11, 1),
+      end: new Date(2026, 0, 1),
+    });
+  });
+
+  test('이번 달은 1일부터 현재까지', () => {
+    expect(getPeriodRange('month', new Date(2026, 8, 30, 15))).toEqual({ start: new Date(2026, 8, 1), end: null });
+  });
+
+  test('특정 달 범위', () => {
+    expect(getMonthRange(2026, 11)).toEqual({ start: new Date(2026, 11, 1), end: new Date(2027, 0, 1) });
+  });
+});
+
+describe('formatMonthLabel', () => {
+  const now = new Date(2026, 8, 30);
+  test('올해는 월만, 다른 해는 연도까지', () => {
+    expect(formatMonthLabel(new Date(2026, 7, 1), now)).toBe('8월');
+    expect(formatMonthLabel(new Date(2025, 11, 1), now)).toBe('2025년 12월');
+  });
+});
+
+describe('getBudgetStatus / formatBudgetLine', () => {
+  test('예산이 없으면 null', () => {
+    expect(getBudgetStatus(null, 10000)).toBeNull();
+  });
+
+  test('남은 금액과 사용률', () => {
+    const status = getBudgetStatus(500000, 342000);
+    expect(status).toEqual({ budget: 500000, spent: 342000, remaining: 158000, percent: 68, over: false });
+    expect(formatBudgetLine(status)).toBe('💰 이번 달 예산 500,000원 중 68% 사용 · 남은 금액 158,000원');
+  });
+
+  test('예산 초과', () => {
+    const status = getBudgetStatus(300000, 342000);
+    expect(status.over).toBe(true);
+    expect(formatBudgetLine(status)).toBe('⚠️ 이번 달 예산을 42,000원 초과했어요. (예산 300,000원)');
+  });
+});
+
+describe('toCategoryRows', () => {
+  test('금액이 큰 순서로 정렬하고 비율 계산', () => {
+    expect(toCategoryRows({ 카페: 4500, 식사: 17000, 교통: 3500 }, 25000)).toEqual([
+      { label: '식사', amount: 17000, percent: 68 },
+      { label: '카페', amount: 4500, percent: 18 },
+      { label: '교통', amount: 3500, percent: 14 },
+    ]);
+  });
+});
 
 describe('getPeriodStart', () => {
   // 2026년 9월 30일 수요일 15:30
@@ -106,13 +167,24 @@ describe('buildChatHistory', () => {
 });
 
 describe('toPersistableMessages', () => {
-  test('로딩 메시지와 위젯을 빼고 저장', () => {
+  test('로딩 메시지와 위젯, 표시용 요소를 빼고 원본 텍스트와 시간만 저장', () => {
     const saved = toPersistableMessages([
-      { id: 1, type: 'bot', message: '기록했어요', widget: 'expenseUndo', payload: { expenseIds: ['a'] }, loading: true, delay: 100 },
-      { id: 'loading-msg', type: 'bot', message: '서버와 통신 중...' },
+      { id: 1, type: 'bot', message: { fake: 'element' }, text: '기록했어요', createdAt: 1000, widget: 'expenseUndo', payload: { expenseIds: ['a'] }, loading: true, delay: 100 },
+      { id: 2, type: 'user', message: '예전 형식 메시지' },
+      { id: 'loading-msg', type: 'bot', message: { fake: 'element' }, text: '서버와 통신 중...' },
     ], 'loading-msg');
 
-    expect(saved).toEqual([{ id: 1, type: 'bot', message: '기록했어요', loading: false }]);
+    expect(saved).toEqual([
+      { id: 1, type: 'bot', text: '기록했어요', createdAt: 1000, loading: false },
+      { id: 2, type: 'user', text: '예전 형식 메시지', loading: false },
+    ]);
+  });
+});
+
+describe('buildChatHistory (표시용 요소가 있는 메시지)', () => {
+  test('message 대신 원본 text를 사용', () => {
+    expect(buildChatHistory([{ type: 'bot', message: { fake: 'element' }, text: '**굵게** 답변' }]))
+      .toEqual([{ role: 'assistant', content: '**굵게** 답변' }]);
   });
 });
 

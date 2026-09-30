@@ -17,6 +17,7 @@ test('여러 지출을 모두 정리하고 목록에 없는 카테고리는 기�
     assert.deepEqual(result, {
         intent: 'expense',
         period: null,
+        budget: null,
         expenses: [
             { subject: '점심', category: '식사', amount: 8000, date: TODAY },
             { subject: '아메리카노', category: '기타', amount: 4500, date: '2026-09-29' }
@@ -38,9 +39,22 @@ test('금액이 잘못된 지출은 버리고, 남은 지출이 없으면 대화
 
 test('조회 의도와 기간을 검증', () => {
     assert.equal(normalizeAnalysis({ intent: 'summary', period: 'week', feedback: 'x' }, TODAY).period, 'week');
+    assert.equal(normalizeAnalysis({ intent: 'summary', period: 'lastMonth', feedback: 'x' }, TODAY).period, 'lastMonth');
     assert.equal(normalizeAnalysis({ intent: 'summary', period: 'year', feedback: 'x' }, TODAY).period, 'today');
     assert.equal(normalizeAnalysis({ intent: 'hack', feedback: 'x' }, TODAY).intent, 'chat');
-    assert.equal(normalizeAnalysis({ intent: 'detail', period: 'week', feedback: 'x' }, TODAY).period, null);
+    assert.equal(normalizeAnalysis({ intent: 'detail', period: 'lastMonth', feedback: 'x' }, TODAY).period, 'lastMonth');
+    assert.equal(normalizeAnalysis({ intent: 'detail', period: 'week', feedback: 'x' }, TODAY).period, 'month');
+    assert.equal(normalizeAnalysis({ intent: 'recent', period: 'week', feedback: 'x' }, TODAY).period, null);
+});
+
+test('예산 설정 의도 검증', () => {
+    assert.equal(normalizeAnalysis({ intent: 'budget', budget: 500000, feedback: 'x' }, TODAY).budget, 500000);
+    assert.equal(normalizeAnalysis({ intent: 'budget', budget: '500,000', feedback: 'x' }, TODAY).budget, 500000);
+    assert.equal(normalizeAnalysis({ intent: 'budget', budget: 0, feedback: 'x' }, TODAY).budget, 0);
+
+    const noAmount = normalizeAnalysis({ intent: 'budget', budget: null, feedback: '얼마로 정할까요?' }, TODAY);
+    assert.equal(noAmount.intent, 'chat');
+    assert.equal(noAmount.budget, null);
 });
 
 test('feedback이 없으면 기본 문구 사용', () => {

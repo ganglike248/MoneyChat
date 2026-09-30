@@ -11,3 +11,88 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* ===== 로그인/회원가입 공통 ===== */
+
+/* 로고: 정사각형으로 맞추고 이미지 가장자리의 흐린 원 테두리가 보이지 않도록 살짝 잘라냄 */
+.auth_logo {
+  width: 40%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 50%;
+  clip-path: circle(47%);
+  background-color: white;
+}
+
+/* 비밀번호 입력창 + 보기/숨기기 버튼 */
+.password-input {
+  position: relative;
+  width: 100%;
+}
+
+.password-input input {
+  width: 100%;
+  padding-right: 4rem !important;
+  box-sizing: border-box;
+}
+
+.password-input-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #718096;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.password-input-toggle:hover {
+  background-color: #edf2f7;
+}
+
+/* ===== 다크 모드 (로그인/회원가입) ===== */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1a202c;
+  }
+
+  .LoginPage_container,
+  .SignupPage_container {
+    background: linear-gradient(135deg, #1a202c 0%, #2a3448 100%) !important;
+  }
+
+  .LoginPage_subContainer,
+  .SignupPage_subContainer {
+    background-color: #2d3748 !important;
+  }
+
+  .LoginPage_subContainer h2,
+  .SignupPage_subContainer h2 {
+    color: #edf2f7 !important;
+  }
+
+  .LoginPage_subContainer h5 {
+    color: #a0aec0 !important;
+  }
+
+  .LoginPage_email,
+  .LoginPage_password,
+  .SignupPage_input {
+    background-color: #1a202c;
+    border-color: #4a5568 !important;
+    color: #edf2f7;
+  }
+
+  .password-input-toggle,
+  .LoginPage_resetBtn {
+    color: #a0aec0 !important;
+  }
+
+  .password-input-toggle:hover {
+    background-color: #4a5568;
+  }
+}

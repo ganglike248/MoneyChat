@@ -1,25 +1,49 @@
 // moneychat-frontend/src/components/ExpenseManager.js
-// '이번 달 지출 상세' 아래에 표시되는 지출 수정/삭제 위젯
+// '지출 상세' 아래에 표시되는 지출 수정/삭제 위젯 (◀ ▶로 다른 달도 확인 가능)
 import React, { useState } from 'react';
-import { fetchExpensesSince, updateExpense, deleteExpenses } from '../expenseRepository';
-import { CATEGORIES, getPeriodStart, toAmount, toLocalDateString, expenseDateFromString, formatMonthDay } from '../chatbot/expenseUtils';
+import { fetchExpensesInRange, updateExpense, deleteExpenses } from '../expenseRepository';
+import { CATEGORIES, getMonthRange, formatMonthLabel, toAmount, toLocalDateString, expenseDateFromString, formatMonthDay } from '../chatbot/expenseUtils';
 
-const ExpenseManager = () => {
+const ExpenseManager = (props) => {
+    const now = new Date();
     const [isOpen, setIsOpen] = useState(false);
+    // 보고 있는 달 (payload로 받은 달, 없으면 이번 달)
+    const [viewMonth, setViewMonth] = useState(() => new Date(
+        props.payload?.year ?? now.getFullYear(),
+        props.payload?.month ?? now.getMonth(),
+        1
+    ));
     const [expenses, setExpenses] = useState(null);
     const [editing, setEditing] = useState(null); // 수정 중인 지출의 입력값
     const [isSaving, setIsSaving] = useState(false);
     const [status, setStatus] = useState('');
 
-    const open = async () => {
-        setIsOpen(true);
+    const isCurrentMonth = viewMonth.getFullYear() === now.getFullYear() && viewMonth.getMonth() === now.getMonth();
+
+    const loadMonth = async (month) => {
+        setViewMonth(month);
+        setExpenses(null);
+        setEditing(null);
         setStatus('');
         try {
-            setExpenses(await fetchExpensesSince(getPeriodStart('month')));
+            setExpenses(await fetchExpensesInRange(getMonthRange(month.getFullYear(), month.getMonth())));
         } catch (error) {
             console.error('지출 목록 조회 실패:', error);
             setStatus('지출 내역을 불러오지 못했어요. 다시 시도해주세요.');
         }
+    };
+
+    const open = () => {
+        setIsOpen(true);
+        loadMonth(viewMonth);
+    };
+
+    const moveMonth = (offset) => {
+        loadMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + offset, 1));
+    };
+
+    const notifyDataChanged = () => {
+        if (props.actions?.notifyDataChanged) props.actions.notifyDataChanged();
     };
 
     const close = () => {
@@ -64,6 +88,7 @@ const ExpenseManager = () => {
             ));
             setEditing(null);
             setStatus('수정했어요 ✅');
+            notifyDataChanged();
         } catch (error) {
             console.error('지출 수정 실패:', error);
             setStatus('수정하지 못했어요. 다시 시도해주세요.');
@@ -81,6 +106,7 @@ const ExpenseManager = () => {
             await deleteExpenses([expense.id]);
             setExpenses((prev) => prev.filter((item) => item.id !== expense.id));
             setStatus('삭제했어요 🗑');
+            notifyDataChanged();
         } catch (error) {
             console.error('지출 삭제 실패:', error);
             setStatus('삭제하지 못했어요. 다시 시도해주세요.');
@@ -105,14 +131,18 @@ const ExpenseManager = () => {
     return (
         <div className="expense-manager">
             <div className="expense-manager-header">
-                <span>이번 달 지출 수정 / 삭제</span>
+                <div className="expense-manager-month">
+                    <button type="button" onClick={() => moveMonth(-1)} disabled={isSaving} aria-label="이전 달">◀</button>
+                    <span>{formatMonthLabel(viewMonth)} 지출</span>
+                    <button type="button" onClick={() => moveMonth(1)} disabled={isSaving || isCurrentMonth} aria-label="다음 달">▶</button>
+                </div>
                 <button className="expense-manager-close" onClick={close} type="button" aria-label="닫기">✕</button>
             </div>
 
             {status && <p className="expense-manager-status" role="status">{status}</p>}
 
             {expenses === null && !status && <p className="expense-manager-empty">불러오는 중...</p>}
-            {expenses && expenses.length === 0 && <p className="expense-manager-empty">이번 달 지출 내역이 없어요.</p>}
+            {expenses && expenses.length === 0 && <p className="expense-manager-empty">{formatMonthLabel(viewMonth)} 지출 내역이 없어요.</p>}
 
             {expenses && expenses.length > 0 && (
                 <ul className="expense-manager-list">

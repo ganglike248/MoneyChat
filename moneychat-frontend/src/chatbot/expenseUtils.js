@@ -1,5 +1,6 @@
 // /src/chatbot/expenseUtils.js
 // Firebase와 무관한 지출 계산 로직 (테스트 가능하도록 분리)
+import { getMessageText } from './messageFormat';
 
 // 지출 카테고리 (백엔드 analysis.js의 CATEGORIES와 동일하게 유지)
 export const CATEGORIES = ['식사', '카페', '간식', '교통', '쇼핑', '패션', '문화', '의료', '교육', '생활', '주거', '통신', '경조사', '기타'];
@@ -14,6 +15,42 @@ export const getPeriodStart = (period, now = new Date()) => {
 
   return start;
 };
+
+// 특정 달의 조회 범위 [start, end) (month는 0부터 시작, 음수면 이전 해로 넘어감)
+export const getMonthRange = (year, month) => ({
+  start: new Date(year, month, 1),
+  end: new Date(year, month + 1, 1),
+});
+
+// 조회 기간 [start, end) (end가 null이면 현재까지)
+export const getPeriodRange = (period, now = new Date()) => {
+  if (period === 'lastMonth') return getMonthRange(now.getFullYear(), now.getMonth() - 1);
+  return { start: getPeriodStart(period, now), end: null };
+};
+
+// "9월" (올해가 아니면 "2025년 12월")
+export const formatMonthLabel = (date, now = new Date()) =>
+  date.getFullYear() === now.getFullYear()
+    ? `${date.getMonth() + 1}월`
+    : `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+
+// 이번 달 예산 사용 현황 (예산이 없으면 null)
+export const getBudgetStatus = (budget, spent) => {
+  if (!budget) return null;
+  const remaining = budget - spent;
+  return { budget, spent, remaining, percent: Math.round((spent / budget) * 100), over: remaining < 0 };
+};
+
+export const formatBudgetLine = (status) =>
+  status.over
+    ? `⚠️ 이번 달 예산을 ${(-status.remaining).toLocaleString()}원 초과했어요. (예산 ${status.budget.toLocaleString()}원)`
+    : `💰 이번 달 예산 ${status.budget.toLocaleString()}원 중 ${status.percent}% 사용 · 남은 금액 ${status.remaining.toLocaleString()}원`;
+
+// 카테고리별 금액을 큰 순서로 정렬한 막대그래프용 데이터
+export const toCategoryRows = (byCategory, total) =>
+  Object.entries(byCategory)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, amount]) => ({ label, amount, percent: total > 0 ? Math.round((amount / total) * 100) : 0 }));
 
 // 금액을 숫자로 변환 (예전에 문자열로 저장된 데이터도 처리)
 export const toAmount = (value) => {
@@ -83,19 +120,24 @@ const HISTORY_CONTENT_LIMIT = 500;
 // 로딩, 오류 안내처럼 대화 맥락과 무관한 메시지는 제외
 export const buildChatHistory = (messages) =>
   messages
-    .filter((msg) => (msg.type === 'user' || msg.type === 'bot') && !msg.excludeFromHistory && typeof msg.message === 'string')
+    .filter((msg) => (msg.type === 'user' || msg.type === 'bot') && !msg.excludeFromHistory && getMessageText(msg) !== null)
     .slice(-HISTORY_LIMIT)
     .map((msg) => ({
       role: msg.type === 'user' ? 'user' : 'assistant',
-      content: msg.message.slice(0, HISTORY_CONTENT_LIMIT),
+      content: getMessageText(msg).slice(0, HISTORY_CONTENT_LIMIT),
     }));
 
 const PERSIST_LIMIT = 50;
 
 // 새로고침 후에도 대화를 복원할 수 있도록 저장 가능한 형태로 정리
-// 위젯(취소하기, 다시 보내기 등)은 당시에만 의미가 있으므로 제거
+// - 화면 표시용 요소(message)는 저장할 수 없으므로 원본 텍스트(text)만 저장
+// - 위젯(취소하기, 다시 보내기 등)은 당시에만 의미가 있으므로 제거
 export const toPersistableMessages = (messages, loadingId) =>
   messages
-    .filter((msg) => msg.id !== loadingId && typeof msg.message === 'string')
+    .filter((msg) => msg.id !== loadingId && getMessageText(msg) !== null)
     .slice(-PERSIST_LIMIT)
-    .map(({ widget, payload, delay, ...rest }) => ({ ...rest, loading: false }));
+    .map(({ widget, payload, delay, message, ...rest }) => ({
+      ...rest,
+      text: getMessageText({ ...rest, message }),
+      loading: false,
+    }));

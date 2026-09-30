@@ -5,6 +5,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
 import { getAuthErrorMessage } from '../authErrors';
+import PasswordInput from './PasswordInput';
 import '../styles/SignupPage.css';
 
 const SignupPage = () => {
@@ -55,16 +56,7 @@ const SignupPage = () => {
   return (
     <div className="SignupPage_container">
       <div className="SignupPage_subContainer">
-        <img
-          src="/logo.png"
-          alt="MoneyChat Avatar"
-          style={{
-            width: '40%',
-            height: '40%',
-            borderRadius: '50%',
-            objectFit: 'cover',
-          }}
-        />
+        <img src="/logo.png" alt="MoneyChat" className="auth_logo" />
         <h2 style={{ marginTop: '0' }}>MoneyChat 회원가입</h2>
         <form onSubmit={handleSignup} className="SignupPage_form">
           <input
@@ -76,8 +68,7 @@ const SignupPage = () => {
             autoComplete="email"
             required
           />
-          <input
-            type="password"
+          <PasswordInput
             placeholder="비밀번호 (6자 이상)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -85,8 +76,7 @@ const SignupPage = () => {
             autoComplete="new-password"
             required
           />
-          <input
-            type="password"
+          <PasswordInput
             placeholder="비밀번호 확인"
             value={passwordConfirm}
             onChange={(e) => setPasswordConfirm(e.target.value)}

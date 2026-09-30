@@ -3,35 +3,39 @@ import { auth } from '../firebase/firebaseConfig';
 import { postToBackend } from '../api';
 import {
   UserFacingError, LOGIN_REQUIRED_MESSAGE,
-  addExpenses, deleteExpenses, fetchExpensesSince, fetchRecentExpense,
+  addExpenses, deleteExpenses, fetchExpensesInRange, fetchRecentExpense, fetchBudget, saveBudget,
 } from '../expenseRepository';
 import {
-  getPeriodStart, summarizeExpenses, isValidExpenseItem, toAmount, formatFeedback,
-  toLocalDateString, expenseDateFromString, formatMonthDay, buildChatHistory,
+  getPeriodRange, summarizeExpenses, isValidExpenseItem, toAmount, formatFeedback,
+  toLocalDateString, expenseDateFromString, formatMonthDay, formatMonthLabel, buildChatHistory,
+  getBudgetStatus, formatBudgetLine, toCategoryRows,
 } from './expenseUtils';
 import { saveChatHistory } from './chatHistory';
+import { toChatMessageFields } from '../components/MessageContent';
+import { withDateDividers } from './messageFormat';
 
 const LOADING_ID = 'loading-msg';
-
-// 최소 로딩 시간 (GPT 응답은 로딩 문구를 모두 볼 수 있도록 길게, DB 조회는 짧게)
-const AI_MIN_LOADING_TIME = 3500;
-const DB_MIN_LOADING_TIME = 1000;
 
 // 백엔드와 동일한 메시지 길이 제한
 const MAX_MESSAGE_LENGTH = 500;
 
 // 새 메시지가 오면 사라지는 일회성 위젯
-const TRANSIENT_WIDGETS = ['expenseUndo', 'retryMessage'];
+const TRANSIENT_WIDGETS = ['expenseUndo', 'retryMessage', 'budgetForm'];
 
 const RATE_LIMIT_MESSAGE = "요청이 너무 많아요. 잠시 후 다시 시도해주세요.";
 const TIMEOUT_MESSAGE = "서버 응답이 너무 늦어요. 잠시 후 다시 시도해주세요.";
 const NETWORK_MESSAGE = "네트워크 연결을 확인해주세요.";
 const BUSY_MESSAGE = "이전 요청을 처리하고 있어요. 잠시만 기다려주세요!";
 
-const SUMMARY_LABELS = {
-  today: { request: "📊 오늘 지출 확인", empty: "📊 오늘은 아직 지출 내역이 없네요!", title: "📊 오늘의 총 지출", categoryIcon: "📈" },
-  week: { request: "📅 이번 주 지출 확인", empty: "📅 이번 주는 아직 지출 내역이 없네요!", title: "📅 이번 주 총 지출", categoryIcon: "📈" },
-  month: { request: "📈 이번 달 지출 확인", empty: "📈 이번 달은 아직 지출 내역이 없네요!", title: "📈 이번 달 총 지출", categoryIcon: "📊" },
+// 기간별 요약 문구 (지난달은 달 이름이 들어가므로 함수로 생성)
+const getSummaryLabels = (period, range) => {
+  const monthLabel = formatMonthLabel(range.start);
+  return {
+    today: { request: "📊 오늘 지출 확인", empty: "📊 오늘은 아직 지출 내역이 없네요!", title: "📊 오늘 지출" },
+    week: { request: "📅 이번 주 지출 확인", empty: "📅 이번 주는 아직 지출 내역이 없네요!", title: "📅 이번 주 지출" },
+    month: { request: "📈 이번 달 지출 확인", empty: "📈 이번 달은 아직 지출 내역이 없네요!", title: `📈 이번 달(${monthLabel}) 지출` },
+    lastMonth: { request: "🗓 지난달 지출 확인", empty: `🗓 ${monthLabel}에는 지출 내역이 없어요.`, title: `🗓 지난달(${monthLabel}) 지출` },
+  }[period];
 };
 
 // 로딩 경과 시간(초)에 따른 안내 문구
@@ -52,15 +56,43 @@ const getErrorMessage = (error, fallback) => {
   return fallback;
 };
 
-const ActionProvider = ({ createChatBotMessage, setState, state, children, actionsRef }) => {
+// 예산 조회 실패(권한 등)가 다른 기능을 막지 않도록 실패하면 예산 없음으로 처리
+const fetchBudgetSafely = async () => {
+  try {
+    return await fetchBudget();
+  } catch (error) {
+    console.warn('예산 조회 실패:', error);
+    return null;
+  }
+};
+
+// 이번 달 예산 사용 현황 (예산이 없으면 null)
+const fetchMonthBudgetStatus = async () => {
+  const budget = await fetchBudgetSafely();
+  if (!budget) return null;
+  const monthTotal = summarizeExpenses(await fetchExpensesInRange(getPeriodRange('month'))).total;
+  return getBudgetStatus(budget, monthTotal);
+};
+
+// onBusyChange: 요청 처리 중 여부가 바뀔 때 호출 (입력창 표시용)
+// onDataChanged: 지출/예산이 바뀌었을 때 호출 (상단 금액 갱신용)
+const ActionProvider = ({ createChatBotMessage, setState, state, children, actionsRef, onBusyChange, onDataChanged }) => {
 
   const loadingTimerRef = useRef(null);
-  const loadingStartTimeRef = useRef(null); // 로딩이 시작된 정확한 시간을 기록할 Ref
-  const minLoadingTimeRef = useRef(0);
   const busyRef = useRef(false); // 요청 처리 중 중복 요청 방지
 
   const uid = auth.currentUser?.uid;
   const messages = state?.messages;
+
+  // 봇 메시지 생성
+  // - 연속된 봇 메시지에도 항상 프로필 표시
+  // - 전송 시간 표시 (options.createdAt에 null을 넘기면 시간 없이 표시)
+  // - options.card가 있으면 요약 카드로 표시
+  const createBotMessage = (text, options = {}) => {
+    const createdAt = 'createdAt' in options ? options.createdAt : Date.now();
+    const { message, ...fields } = toChatMessageFields(text, createdAt, { formatted: true, card: options.card });
+    return createChatBotMessage(message, { withAvatar: true, ...options, ...fields });
+  };
 
   useEffect(() => {
     return () => {
@@ -68,10 +100,44 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
     };
   }, []);
 
+  // 입력창으로 보낸 사용자 메시지는 라이브러리가 텍스트로만 추가하므로, 전송 시간을 붙여서 표시용으로 변환
+  useEffect(() => {
+    if (!messages?.some((msg) => msg.type === 'user' && typeof msg.message === 'string')) return;
+
+    const sentAt = Date.now();
+    setState((prev) => ({
+      ...prev,
+      messages: prev.messages.map((msg) => (
+        msg.type === 'user' && typeof msg.message === 'string'
+          ? { ...msg, ...toChatMessageFields(msg.message, sentAt, { formatted: false }) }
+          : msg
+      )),
+    }));
+  }, [messages, setState]);
+
+  // 날짜가 바뀌는 곳에 구분 바 추가 (구분 바 위치가 달라졌을 때만 갱신)
+  useEffect(() => {
+    if (!messages) return;
+
+    const idsOf = (list) => list.map((msg) => msg.id).join('|');
+    if (idsOf(withDateDividers(messages)) === idsOf(messages)) return;
+
+    setState((prev) => ({ ...prev, messages: withDateDividers(prev.messages) }));
+  }, [messages, setState]);
+
   // 새로고침해도 대화가 남도록 이 기기에 저장
   useEffect(() => {
     if (uid && messages) saveChatHistory(uid, messages, LOADING_ID);
   }, [uid, messages]);
+
+  const notifyDataChanged = () => {
+    if (onDataChanged) onDataChanged();
+  };
+
+  const setBusy = (busy) => {
+    busyRef.current = busy;
+    if (onBusyChange) onBusyChange(busy);
+  };
 
   const clearTransientWidgets = (messageList) => {
     return messageList.map((msg) => {
@@ -85,7 +151,7 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
 
   const addUserMessage = (message) => {
     const userMessage = {
-      message: message,
+      ...toChatMessageFields(message, Date.now(), { formatted: false }),
       type: 'user',
       id: Date.now() + Math.random(),
     };
@@ -103,12 +169,10 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
     }
   };
 
-  const showLoading = (minLoadingTime) => {
+  const showLoading = () => {
     stopLoadingTimer(); // 이전 로딩이 남아 있으면 정리
-    loadingStartTimeRef.current = Date.now(); // 로딩 시작 시간 기록
-    minLoadingTimeRef.current = minLoadingTime;
 
-    const initialMsg = createChatBotMessage(getLoadingText(0), { id: LOADING_ID, excludeFromHistory: true });
+    const initialMsg = createBotMessage(getLoadingText(0), { id: LOADING_ID, excludeFromHistory: true, createdAt: null });
 
     setState((prev) => ({
       ...prev,
@@ -124,7 +188,10 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
         const loadingMsgIndex = newMessages.findIndex(msg => msg.id === LOADING_ID);
 
         if (loadingMsgIndex !== -1) {
-           newMessages[loadingMsgIndex] = { ...newMessages[loadingMsgIndex], message: getLoadingText(step) };
+           newMessages[loadingMsgIndex] = {
+             ...newMessages[loadingMsgIndex],
+             ...toChatMessageFields(getLoadingText(step), null, { formatted: true }),
+           };
         } else {
            stopLoadingTimer();
         }
@@ -135,24 +202,14 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
 
   const removeLoading = (messageList) => {
     stopLoadingTimer();
-    loadingStartTimeRef.current = null; // 초기화
     return messageList.filter((msg) => msg.id !== LOADING_ID);
   };
 
-  // 답변을 화면에 띄우기 전, 최소 로딩 시간을 채우는 로직
+  // 답변이 도착하면 로딩 메시지를 지우고 바로 표시
+  // (라이브러리 기본 동작인 0.75초 '...' 입력 중 애니메이션도 건너뜀)
   // keepLoading: 로딩 중에 안내만 끼워 넣을 때 사용 (로딩 메시지 유지)
   const addBotMessage = async (message, options = {}, { keepLoading = false } = {}) => {
-    // 로딩 중이었다면 시간이 얼마나 지났는지 체크
-    if (!keepLoading && loadingStartTimeRef.current) {
-      const elapsedTime = Date.now() - loadingStartTimeRef.current;
-
-      // 응답이 최소 로딩 시간보다 빨리 왔다면, 남은 시간 동안 기다림
-      if (elapsedTime < minLoadingTimeRef.current) {
-        await new Promise(resolve => setTimeout(resolve, minLoadingTimeRef.current - elapsedTime));
-      }
-    }
-
-    const botMessage = createChatBotMessage(message, options);
+    const botMessage = { ...createBotMessage(message, options), loading: false };
     setState((prev) => {
       const cleanedMessages = clearTransientWidgets(prev.messages);
 
@@ -167,9 +224,9 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
 
   // 로딩 표시 후 작업 실행, 실패 시 반드시 로딩을 치우고 에러 메시지 표시
   // retryMessage를 넘기면 실패 시 '다시 보내기' 버튼 표시
-  const runWithLoading = async (task, { errorMessage, minLoadingTime = DB_MIN_LOADING_TIME, retryMessage } = {}) => {
-    busyRef.current = true;
-    showLoading(minLoadingTime);
+  const runWithLoading = async (task, { errorMessage, retryMessage } = {}) => {
+    setBusy(true);
+    showLoading();
 
     try {
       await task();
@@ -182,7 +239,7 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
       }
       await addBotMessage(getErrorMessage(error, errorMessage), options);
     } finally {
-      busyRef.current = false;
+      setBusy(false);
     }
   };
 
@@ -203,6 +260,8 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
     }
 
     const expenseIds = await addExpenses(expenses);
+    notifyDataChanged();
+
     const today = toLocalDateString(now);
     const datePrefix = (expense) => (toLocalDateString(expense.date) === today ? '' : `${formatMonthDay(expense.date)} `);
 
@@ -216,35 +275,61 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
       message = `${expenses.length}건의 지출을 기록했어요! (총 ${total.toLocaleString()}원)\n${lines.join('\n')}\n\n${analysis.feedback}`;
     }
 
+    // 예산을 정해 두었다면 남은 금액도 함께 안내 (실패해도 기록 결과는 보여줌)
+    try {
+      const budgetStatus = await fetchMonthBudgetStatus();
+      if (budgetStatus) message += `\n\n${formatBudgetLine(budgetStatus)}`;
+    } catch (error) {
+      console.warn('예산 현황 조회 실패:', error);
+    }
+
     await addBotMessage(message, { widget: 'expenseUndo', payload: { expenseIds } });
   };
 
   const showSummary = async (period) => {
-    const labels = SUMMARY_LABELS[period];
-    const summary = summarizeExpenses(await fetchExpensesSince(getPeriodStart(period)));
+    const range = getPeriodRange(period);
+    const labels = getSummaryLabels(period, range);
+    const summary = summarizeExpenses(await fetchExpensesInRange(range));
 
     if (summary.total === 0) {
       await addBotMessage(labels.empty);
       return;
     }
 
-    let message = `${labels.title}: ${summary.total.toLocaleString()}원\n\n` +
-      `${labels.categoryIcon} 카테고리별 지출:\n${Object.entries(summary.byCategory).map(([category, amount]) => `• ${category}: ${amount.toLocaleString()}원`).join('\n')}`;
+    const budgetStatus = period === 'month' ? getBudgetStatus(await fetchBudgetSafely(), summary.total) : null;
 
-    if (period === 'today') {
-      message += `\n\n📝 상세 지출:\n${Object.entries(summary.bySubject).map(([subject, amount]) => `• ${subject}: ${amount.toLocaleString()}원`).join('\n')}`;
-    }
+    // 화면에는 카드로 표시하고, 텍스트는 대화 맥락(GPT)과 기록용으로 사용
+    let text = `${labels.title}: ${summary.total.toLocaleString()}원\n\n` +
+      `카테고리별 지출:\n${Object.entries(summary.byCategory).map(([category, amount]) => `• ${category}: ${amount.toLocaleString()}원`).join('\n')}`;
+    if (budgetStatus) text += `\n\n${formatBudgetLine(budgetStatus)}`;
 
-    await addBotMessage(message);
+    const details = period === 'today'
+      ? Object.entries(summary.bySubject).sort((a, b) => b[1] - a[1]).map(([label, amount]) => ({ label, amount }))
+      : [];
+    if (details.length) text += `\n\n상세 지출:\n${details.map((detail) => `• ${detail.label}: ${detail.amount.toLocaleString()}원`).join('\n')}`;
+
+    await addBotMessage(text, {
+      card: {
+        title: labels.title,
+        total: summary.total,
+        rows: toCategoryRows(summary.byCategory, summary.total),
+        details,
+        budget: budgetStatus,
+      },
+    });
   };
 
-  const showMonthDetail = async () => {
-    const expenses = (await fetchExpensesSince(getPeriodStart('month')))
+  const showDetail = async (period = 'month') => {
+    const range = getPeriodRange(period);
+    const monthLabel = formatMonthLabel(range.start);
+    const expenses = (await fetchExpensesInRange(range))
       .map((expense) => ({ ...expense, amount: toAmount(expense.amount) }))
       .filter((expense) => expense.amount !== null);
 
+    const managerPayload = { year: range.start.getFullYear(), month: range.start.getMonth() };
+
     if (expenses.length === 0) {
-      await addBotMessage("이번 달에 입력된 지출 내역이 없습니다. 💸");
+      await addBotMessage(`${monthLabel}에 입력된 지출 내역이 없습니다. 💸`, { widget: 'expenseManager', payload: managerPayload });
       return;
     }
 
@@ -258,7 +343,7 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
       totalAmount += expense.amount;
     });
 
-    let detailMessage = `📋 ${new Date().toLocaleDateString('ko-KR', { month: 'long' })}의 지출 상세 정보\n\n`;
+    let detailMessage = `📋 ${monthLabel}의 지출 상세 정보\n\n`;
     Object.keys(expensesByDate).forEach(date => {
       detailMessage += `📅 ${date}\n`;
       expensesByDate[date].forEach(exp => {
@@ -268,7 +353,7 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
     });
 
     detailMessage += `💰 총 ${totalAmount.toLocaleString()}원`;
-    await addBotMessage(detailMessage, { widget: 'expenseManager' });
+    await addBotMessage(detailMessage, { widget: 'expenseManager', payload: managerPayload });
   };
 
   const showRecent = async () => {
@@ -287,7 +372,7 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
   };
 
   const showFeedback = async () => {
-    const monthSummary = summarizeExpenses(await fetchExpensesSince(getPeriodStart('month')));
+    const monthSummary = summarizeExpenses(await fetchExpensesInRange(getPeriodRange('month')));
     if (monthSummary.total === 0) {
       await addBotMessage("아직 이번 달 지출 내역이 없습니다.");
       return;
@@ -298,10 +383,38 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
       total: monthSummary.total,
       dailyAverage: monthSummary.total / daysInMonth,
       byCategory: monthSummary.byCategory,
-      daysInMonth
+      daysInMonth,
+      budget: await fetchBudgetSafely(),
     });
 
     await addBotMessage(formatFeedback(data.feedback));
+  };
+
+  // 예산 저장 (0이면 해제)
+  const applyBudget = async (budget) => {
+    await saveBudget(budget > 0 ? budget : null);
+    notifyDataChanged();
+
+    if (!(budget > 0)) {
+      await addBotMessage("예산을 해제했어요. 필요할 때 언제든 다시 정할 수 있어요!");
+      return;
+    }
+
+    const monthTotal = summarizeExpenses(await fetchExpensesInRange(getPeriodRange('month'))).total;
+    await addBotMessage(
+      `💰 한 달 예산을 ${budget.toLocaleString()}원으로 정했어요!\n지출을 기록할 때마다 남은 금액을 알려드릴게요.\n\n` +
+      formatBudgetLine(getBudgetStatus(budget, monthTotal))
+    );
+  };
+
+  const showBudgetForm = async () => {
+    const budget = await fetchBudget();
+    await addBotMessage(
+      budget
+        ? `현재 한 달 예산은 ${budget.toLocaleString()}원이에요.\n바꿀 금액을 입력해주세요.`
+        : "한 달 예산을 정하면 지출을 기록할 때마다 남은 금액을 알려드려요.\n금액을 입력해주세요.",
+      { widget: 'budgetForm', payload: { budget } }
+    );
   };
 
   // ===== 사용자 입력 처리 =====
@@ -341,44 +454,69 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
       switch (analysis.intent) {
         case 'expense': return recordExpenses(analysis);
         case 'summary': return showSummary(analysis.period || 'today');
-        case 'detail': return showMonthDetail();
+        case 'detail': return showDetail(analysis.period || 'month');
         case 'recent': return showRecent();
         case 'feedback': return showFeedback();
+        case 'budget': return applyBudget(analysis.budget);
         default: return addBotMessage(analysis.feedback);
       }
     }, {
       errorMessage: "죄송합니다. 처리 중 문제가 발생했어요. 다시 시도해주세요.",
-      minLoadingTime: AI_MIN_LOADING_TIME,
       retryMessage: text,
     });
   };
 
+  // 빠른 입력 버튼: 사용자 메시지로 표시한 뒤 채팅처럼 처리
+  const sendUserMessage = async (text) => {
+    if (busyRef.current) {
+      notifyBusy();
+      return;
+    }
+
+    addUserMessage(text);
+    await handleMessage(text);
+  };
+
   // 메뉴 버튼: 사용자 메시지로 표시한 뒤 작업 실행
-  const runMenuAction = async (label, task, errorMessage, minLoadingTime) => {
+  const runMenuAction = async (label, task, errorMessage) => {
     if (busyRef.current) {
       notifyBusy();
       return;
     }
 
     addUserMessage(label);
-    await runWithLoading(task, { errorMessage, minLoadingTime });
+    await runWithLoading(task, { errorMessage });
   };
 
   const summaryAction = (period) => () =>
-    runMenuAction(SUMMARY_LABELS[period].request, () => showSummary(period), "지출 조회 중 오류가 발생했습니다. 다시 시도해주세요.");
+    runMenuAction(getSummaryLabels(period, getPeriodRange(period)).request, () => showSummary(period), "지출 조회 중 오류가 발생했습니다. 다시 시도해주세요.");
 
   const handleTodayExpenses = summaryAction('today');
   const handleWeekExpenses = summaryAction('week');
   const handleMonthExpenses = summaryAction('month');
+  const handleLastMonthExpenses = summaryAction('lastMonth');
 
   const handleExpenseFeedback = () =>
-    runMenuAction("🔍 지출 패턴 분석", showFeedback, "죄송합니다. 피드백을 생성하는 중 문제가 발생했어요. 다시 시도해주세요.", AI_MIN_LOADING_TIME);
+    runMenuAction("🔍 지출 패턴 분석", showFeedback, "죄송합니다. 피드백을 생성하는 중 문제가 발생했어요. 다시 시도해주세요.");
 
   const handleMonthDetailExpenses = () =>
-    runMenuAction("📋 이번 달 지출 상세", showMonthDetail, "지출 상세 조회 중 오류가 발생했습니다. 다시 시도해주세요.");
+    runMenuAction("📋 이번 달 지출 상세", () => showDetail('month'), "지출 상세 조회 중 오류가 발생했습니다. 다시 시도해주세요.");
 
   const handleRecentExpense = () =>
     runMenuAction("🕒 최근 지출 알아보기", showRecent, "최근 지출 조회 중 오류가 발생했습니다. 다시 시도해주세요.");
+
+  const handleBudgetSetting = () =>
+    runMenuAction("💰 예산 설정", showBudgetForm, "예산 정보를 불러오지 못했어요. 다시 시도해주세요.");
+
+  // 예산 설정 위젯에서 저장/해제
+  const handleSetBudget = async (budget) => {
+    if (busyRef.current) {
+      notifyBusy();
+      return;
+    }
+
+    await runWithLoading(() => applyBudget(budget), { errorMessage: "예산을 저장하지 못했어요. 다시 시도해주세요." });
+  };
 
   // 방금 입력한 지출(문서 ID)만 삭제
   const handleUndoExpense = async (expenseIds) => {
@@ -391,6 +529,7 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
       if (!expenseIds?.length) throw new UserFacingError("취소할 지출 내역을 찾을 수 없습니다.");
 
       await deleteExpenses(expenseIds);
+      notifyDataChanged();
       await addBotMessage(
         expenseIds.length > 1 ? `${expenseIds.length}건의 지출 입력이 취소되었습니다.` : "지출 입력이 취소되었습니다."
       );
@@ -398,8 +537,10 @@ const ActionProvider = ({ createChatBotMessage, setState, state, children, actio
   };
 
   const actions = {
-    handleMessage, handleTodayExpenses, handleWeekExpenses, handleMonthExpenses,
-    handleExpenseFeedback, handleMonthDetailExpenses, handleRecentExpense, handleUndoExpense,
+    handleMessage, sendUserMessage,
+    handleTodayExpenses, handleWeekExpenses, handleMonthExpenses, handleLastMonthExpenses,
+    handleExpenseFeedback, handleMonthDetailExpenses, handleRecentExpense,
+    handleBudgetSetting, handleSetBudget, handleUndoExpense, notifyDataChanged,
   };
 
   // 메뉴 버튼 등 챗봇 외부에서 액션을 호출할 수 있도록 공유
