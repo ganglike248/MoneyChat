@@ -86,6 +86,19 @@ npm install react-router-dom react-firebase-hooks
 2026.02.22(v1.1.8)
 - 챗봇 로딩 메시지 최소 로딩 시간 설정 및 내용 변경
 
+2026.09.30(v1.2.0)
+- 백엔드 API에 Firebase 로그인 토큰 검증 및 사용자별 요청 제한(1분 20회) 추가
+- 백엔드 로그에 사용자 메시지(지출 내용)가 남지 않도록 수정
+- GPT 응답 검증 추가(금액이 양수가 아니면 저장하지 않음), 메시지 길이 500자 제한
+- 지출 패턴 분석 API 주소 하드코딩 제거(환경 변수 사용)
+- 조회 중 오류가 나면 로딩 메시지가 사라지지 않던 문제 수정
+- '취소하기'가 가장 최근 지출이 아니라 방금 입력한 지출만 삭제하도록 수정
+- 서비스 워커를 페이지 네트워크 우선 방식으로 변경(배포 시 캐시 버전 수정 불필요)
+- 사용하지 않는 컴포넌트 삭제, 지출 계산 로직 분리 및 테스트 추가
+- DB 조회 시 최소 로딩 시간 3.5초 -> 1초로 단축(GPT 응답은 3.5초 유지)
+- GPT 모델을 OPENAI_MODEL 환경 변수로 교체 가능하게 변경
+- 백엔드 Node 22 이상 필요(firebase-admin)
+
 <다음 작업>
 
 -
@@ -98,7 +111,8 @@ npm install react-router-dom react-firebase-hooks
 LoginPage의 버전 수정
 
 프론트 빌드
-- 프론트 폴더에서 package-lock.json, package.json, service-worker.js에서 버전 변경하기
+- 프론트 폴더에서 npm version <새버전> --no-git-tag-version 으로 버전 변경하기
+  (service-worker.js는 캐싱 로직을 바꿀 때만 CACHE_NAME 수정)
 - npm run build
 - firebase deploy
 

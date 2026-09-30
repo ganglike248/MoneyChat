@@ -14,18 +14,11 @@ const ChatbotPage = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const actionProviderRef = useRef(null);
 
-    // ActionProvider 래퍼 - useEffect 제거하고 직접 ref 할당
-    const ActionProviderWrapper = useCallback(({ createChatBotMessage, setState, children }) => {
-        const actionProvider = ActionProvider({ createChatBotMessage, setState, children });
-
-        // useEffect 대신 직접 ref에 할당
-        if (actionProvider && actionProvider.props && actionProvider.props.children) {
-            const actions = actionProvider.props.children[0].props.actions;
-            actionProviderRef.current = actions;
-        }
-
-        return actionProvider;
-    }, []);
+    // ActionProvider 래퍼 - 메뉴에서 액션을 호출할 수 있도록 ref 전달
+    const ActionProviderWrapper = useCallback(
+        (props) => <ActionProvider {...props} actionsRef={actionProviderRef} />,
+        []
+    );
 
     // 메뉴 옵션들
     const menuOptions = [
@@ -82,7 +75,7 @@ const ChatbotPage = () => {
                 if (inputForm) {
                     const menuButton = document.createElement('button');
                     menuButton.className = 'custom-menu-button';
-                    menuButton.innerHTML = '☰';
+                    menuButton.textContent = '☰';
                     menuButton.title = '메뉴 열기';
                     menuButton.type = 'button';
 
@@ -101,21 +94,23 @@ const ChatbotPage = () => {
 
                     return () => {
                         menuButton.removeEventListener('click', handleClick);
+                        menuButton.remove();
                     };
                 }
-            };
+            }
         };
 
         // 약간의 딜레이를 줘서 DOM이 완전히 렌더링된 후 실행
+        let cleanup;
         const timer = setTimeout(() => {
-            const cleanup = addMenuButton();
-            return cleanup;
+            cleanup = addMenuButton();
         }, 100);
 
         return () => {
             clearTimeout(timer);
+            if (cleanup) cleanup();
         };
-    }, [setIsMenuOpen]);
+    }, []);
 
     // 메뉴 옵션 클릭 핸들러
     const handleMenuOptionClick = useCallback((handler) => {

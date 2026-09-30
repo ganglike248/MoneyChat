@@ -7,8 +7,9 @@ const UndoExpenseButton = (props) => {
     const handleUndo = async () => {
         if (isUsed) return;
 
-        await props.actionProvider.handleUndoRecentExpense();
+        // 중복 클릭 방지를 위해 먼저 숨김
         setIsUsed(true);
+        await props.actions.handleUndoExpense(props.payload?.expenseId);
     };
 
     if (isUsed) {

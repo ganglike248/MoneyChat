@@ -4,8 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import ChatbotPage from './components/ChatbotPage';
-
-export const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://moneychat-backend-17g5.onrender.com';
+import { BACKEND_BASE_URL } from './api';
 
 function App() {
   useEffect(() => {
