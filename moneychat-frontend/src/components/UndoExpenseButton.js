@@ -3,13 +3,14 @@ import React, { useState } from 'react';
 
 const UndoExpenseButton = (props) => {
     const [isUsed, setIsUsed] = useState(false);
+    const expenseIds = props.payload?.expenseIds || [];
 
     const handleUndo = async () => {
         if (isUsed) return;
 
         // 중복 클릭 방지를 위해 먼저 숨김
         setIsUsed(true);
-        await props.actions.handleUndoExpense(props.payload?.expenseId);
+        await props.actions.handleUndoExpense(expenseIds);
     };
 
     if (isUsed) {
@@ -18,7 +19,7 @@ const UndoExpenseButton = (props) => {
 
     return (
         <button className="expense-undo-button" onClick={handleUndo} type="button">
-            취소하기
+            ↩ {expenseIds.length > 1 ? `${expenseIds.length}건 모두 취소하기` : '취소하기'}
         </button>
     );
 };

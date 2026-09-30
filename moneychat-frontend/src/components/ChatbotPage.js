@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import Chatbot from 'react-chatbot-kit';
 import 'react-chatbot-kit/build/main.css';
-import config from '../chatbot/config';
+import { createConfig } from '../chatbot/config';
 import MessageParser from '../chatbot/MessageParser';
 import ActionProvider from '../chatbot/ActionProvider';
+import { loadChatHistory, clearChatHistory } from '../chatbot/chatHistory';
 import { auth } from '../firebase/firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ import '../styles/chatbot.css';
 
 const ChatbotPage = () => {
     const navigate = useNavigate();
+    const [uid, setUid] = useState(null); // 로그인 확인 전에는 null
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const actionProviderRef = useRef(null);
 
@@ -19,6 +21,9 @@ const ChatbotPage = () => {
         (props) => <ActionProvider {...props} actionsRef={actionProviderRef} />,
         []
     );
+
+    // 사용자별 config (이 기기에 저장된 대화가 있으면 이어서 보여줌)
+    const chatbotConfig = useMemo(() => (uid ? createConfig(loadChatHistory(uid)) : null), [uid]);
 
     // 메뉴 옵션들
     const menuOptions = [
@@ -38,7 +43,7 @@ const ChatbotPage = () => {
             id: 3
         },
         {
-            text: "📋 이번 달 지출 상세",
+            text: "📋 이번 달 지출 상세 · 수정",
             handler: () => actionProviderRef.current?.handleMonthDetailExpenses(),
             id: 4
         },
@@ -54,19 +59,23 @@ const ChatbotPage = () => {
         },
     ];
 
-    // 로그인 확인
+    // 로그인 확인 (새로고침 시 로그인 정보가 복원될 때까지 기다림)
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
-            if (!user) {
-                navigate('/');
+            if (user) {
+                setUid(user.uid);
+            } else {
+                navigate('/', { replace: true });
             }
         });
 
         return () => unsubscribe();
     }, [navigate]);
 
-    // 컴포넌트 마운트 후 입력창에 메뉴 버튼 추가
+    // 챗봇이 표시된 후 입력창에 메뉴 버튼 추가
     useEffect(() => {
+        if (!uid) return;
+
         const addMenuButton = () => {
             const inputContainer = document.querySelector('.react-chatbot-kit-chat-input-container');
             if (inputContainer && !document.querySelector('.custom-menu-button')) {
@@ -77,6 +86,7 @@ const ChatbotPage = () => {
                     menuButton.className = 'custom-menu-button';
                     menuButton.textContent = '☰';
                     menuButton.title = '메뉴 열기';
+                    menuButton.setAttribute('aria-label', '메뉴 열기');
                     menuButton.type = 'button';
 
                     const handleClick = (e) => {
@@ -88,9 +98,6 @@ const ChatbotPage = () => {
                     menuButton.addEventListener('click', handleClick);
 
                     inputContainer.insertBefore(menuButton, inputForm);
-                    inputContainer.style.display = 'flex';
-                    inputContainer.style.alignItems = 'center';
-                    inputContainer.style.gap = '0.5rem';
 
                     return () => {
                         menuButton.removeEventListener('click', handleClick);
@@ -110,7 +117,27 @@ const ChatbotPage = () => {
             clearTimeout(timer);
             if (cleanup) cleanup();
         };
-    }, []);
+    }, [uid]);
+
+    // 메뉴가 열려 있을 때 바깥을 누르거나 Esc를 누르면 닫기
+    useEffect(() => {
+        if (!isMenuOpen) return;
+
+        const handlePointerDown = (e) => {
+            if (e.target.closest('.menu-dropdown') || e.target.closest('.custom-menu-button')) return;
+            setIsMenuOpen(false);
+        };
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') setIsMenuOpen(false);
+        };
+
+        document.addEventListener('pointerdown', handlePointerDown);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', handlePointerDown);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isMenuOpen]);
 
     // 메뉴 옵션 클릭 핸들러
     const handleMenuOptionClick = useCallback((handler) => {
@@ -120,32 +147,33 @@ const ChatbotPage = () => {
         setIsMenuOpen(false);
     }, []);
 
-    // 로그아웃
+    // 로그아웃 (공용 기기를 고려해 이 기기의 대화 기록도 삭제)
     const handleLogout = useCallback(async () => {
+        if (!window.confirm("로그아웃하면 이 기기에 저장된 대화 기록이 지워져요.\n로그아웃 하시겠어요?")) return;
+
         try {
+            if (uid) clearChatHistory(uid);
             await signOut(auth);
-            alert("로그아웃 되었습니다!");
-            navigate('/');
+            navigate('/', { replace: true });
         } catch (error) {
             console.error("로그아웃 실패: ", error);
+            alert("로그아웃하지 못했어요. 다시 시도해주세요.");
         }
-    }, [navigate]);
+    }, [navigate, uid]);
+
+    if (!chatbotConfig) {
+        return (
+            <div className="chatbotPage_container">
+                <p className="chatbotPage_loading">불러오는 중...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="chatbotPage_container">
             <div className='chatbotPage_headerDiv'>
-                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'start', width: '70%' }}>
-                    <img
-                        src="/logo.png"
-                        alt="MoneyChat Avatar"
-                        style={{
-                            width: '15%',
-                            height: '15%',
-                            borderRadius: '50%',
-                            objectFit: 'cover',
-                            marginRight: '10px'
-                        }}
-                    />
+                <div className="chatbotPage_titleGroup">
+                    <img src="/logo.png" alt="" className="chatbotPage_logo" />
                     <h2 className="chatbotPage_header">하루의 지출을 머니챗과 함께!</h2>
                 </div>
                 <button className="chatbotPage_logoutBtn" onClick={handleLogout}>
@@ -153,13 +181,14 @@ const ChatbotPage = () => {
                 </button>
             </div>
 
-            <div style={{ position: 'relative', width: '100%' }}>
+            <div className="chatbotPage_chatWrapper">
                 <Chatbot
-                    config={config}
+                    key={uid}
+                    config={chatbotConfig}
                     messageParser={MessageParser}
                     actionProvider={ActionProviderWrapper}
                     headerText='MoneyChat'
-                    placeholderText='자유롭게 지출 내용을 입력해주세요!'
+                    placeholderText='예) 점심 8000'
                 />
 
                 {/* 메뉴 드롭다운 */}
@@ -170,6 +199,7 @@ const ChatbotPage = () => {
                             <button
                                 className="menu-close-button"
                                 onClick={() => setIsMenuOpen(false)}
+                                aria-label="메뉴 닫기"
                             >
                                 ✕
                             </button>

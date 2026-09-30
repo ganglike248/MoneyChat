@@ -42,6 +42,8 @@
 
 /* 입력 필드 고유 스타일 */
 .SignupPage_input {
+    /* 16px 미만이면 iOS에서 입력 시 화면이 확대됨 */
+    font-size: 16px;
     border: 1px solid #e2e8f0;
     transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
@@ -68,6 +70,19 @@
 .SignupPage_button:hover {
     background-color: #38a169;
     transform: translateY(-1px);
+}
+
+.SignupPage_button:disabled {
+    opacity: 0.7;
+    cursor: default;
+    transform: none;
+}
+
+.SignupPage_error {
+    margin: 0;
+    color: #e53e3e;
+    font-size: 0.8125rem;
+    text-align: left;
 }
 
 .SignupPage_loginLink {

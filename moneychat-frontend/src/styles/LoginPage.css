@@ -49,7 +49,8 @@
     padding: 0.75rem;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    font-size: 0.875rem;
+    /* 16px 미만이면 iOS에서 입력 시 화면이 확대됨 */
+    font-size: 16px;
     transition: border-color 0.2s;
     outline: none;
     box-sizing: border-box;
@@ -96,4 +97,41 @@
 .LoginPage_signupBtn:hover {
     background-color: #38a169;
     transform: translateY(-1px);
+}
+
+.LoginPage_LoginBtn:disabled {
+    opacity: 0.7;
+    cursor: default;
+    transform: none;
+}
+
+.LoginPage_error,
+.LoginPage_info {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.LoginPage_error {
+    color: #e53e3e;
+}
+
+.LoginPage_info {
+    color: #2b6cb0;
+}
+
+.LoginPage_resetBtn {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    border: none;
+    background: none;
+    color: #718096;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.LoginPage_resetBtn:hover {
+    color: #4a5568;
 }

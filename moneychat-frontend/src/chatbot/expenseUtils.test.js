@@ -1,4 +1,7 @@
-import { getPeriodStart, toAmount, summarizeExpenses, isValidExpense, formatFeedback } from './expenseUtils';
+import {
+  getPeriodStart, toAmount, summarizeExpenses, isValidExpenseItem, formatFeedback,
+  toLocalDateString, expenseDateFromString, buildChatHistory, toPersistableMessages,
+} from './expenseUtils';
 
 describe('getPeriodStart', () => {
   // 2026년 9월 30일 수요일 15:30
@@ -8,16 +11,20 @@ describe('getPeriodStart', () => {
     expect(getPeriodStart('today', now)).toEqual(new Date(2026, 8, 30));
   });
 
-  test('week는 이번 주 일요일 0시', () => {
-    expect(getPeriodStart('week', now)).toEqual(new Date(2026, 8, 27));
+  test('week는 이번 주 월요일 0시', () => {
+    expect(getPeriodStart('week', now)).toEqual(new Date(2026, 8, 28));
+  });
+
+  test('일요일은 그 주의 마지막 날', () => {
+    expect(getPeriodStart('week', new Date(2026, 9, 4, 20))).toEqual(new Date(2026, 8, 28));
+  });
+
+  test('월요일은 그날부터 새 주', () => {
+    expect(getPeriodStart('week', new Date(2026, 9, 5, 9))).toEqual(new Date(2026, 9, 5));
   });
 
   test('month는 이번 달 1일 0시', () => {
     expect(getPeriodStart('month', now)).toEqual(new Date(2026, 8, 1));
-  });
-
-  test('월 초의 주는 지난달로 넘어감', () => {
-    expect(getPeriodStart('week', new Date(2026, 9, 2))).toEqual(new Date(2026, 8, 27));
   });
 });
 
@@ -52,13 +59,60 @@ describe('summarizeExpenses', () => {
   });
 });
 
-describe('isValidExpense', () => {
-  test('필수 값이 모두 있어야 유효', () => {
-    expect(isValidExpense({ hasExpense: true, amount: 8000, subject: '점심', category: '식사' })).toBe(true);
-    expect(isValidExpense({ hasExpense: false, amount: 8000, subject: '점심', category: '식사' })).toBe(false);
-    expect(isValidExpense({ hasExpense: true, amount: -1, subject: '점심', category: '식사' })).toBe(false);
-    expect(isValidExpense({ hasExpense: true, amount: 8000, subject: '', category: '식사' })).toBe(false);
-    expect(isValidExpense(null)).toBe(false);
+describe('isValidExpenseItem', () => {
+  test('항목, 카테고리, 양수 금액이 모두 있어야 유효', () => {
+    expect(isValidExpenseItem({ amount: 8000, subject: '점심', category: '식사' })).toBe(true);
+    expect(isValidExpenseItem({ amount: -1, subject: '점심', category: '식사' })).toBe(false);
+    expect(isValidExpenseItem({ amount: 8000, subject: '', category: '식사' })).toBe(false);
+    expect(isValidExpenseItem({ amount: 8000, subject: '점심' })).toBe(false);
+    expect(isValidExpenseItem(null)).toBe(false);
+  });
+});
+
+describe('expenseDateFromString', () => {
+  const now = new Date(2026, 8, 30, 15, 30);
+
+  test('오늘이나 잘못된 값은 현재 시각', () => {
+    expect(expenseDateFromString('2026-09-30', now)).toEqual(now);
+    expect(expenseDateFromString(undefined, now)).toEqual(now);
+    expect(expenseDateFromString('2026-02-30', now)).toEqual(now);
+  });
+
+  test('과거 날짜는 그날 정오', () => {
+    expect(expenseDateFromString('2026-09-29', now)).toEqual(new Date(2026, 8, 29, 12));
+  });
+
+  test('미래 날짜는 현재 시각', () => {
+    expect(expenseDateFromString('2026-10-01', now)).toEqual(now);
+  });
+
+  test('toLocalDateString과 짝이 맞음', () => {
+    expect(toLocalDateString(new Date(2026, 0, 5))).toBe('2026-01-05');
+  });
+});
+
+describe('buildChatHistory', () => {
+  test('사용자/봇 메시지만 최근 8개까지 역할을 붙여 변환하고 제외 표시된 메시지는 뺌', () => {
+    const messages = [
+      ...Array.from({ length: 10 }, (_, i) => ({ type: i % 2 ? 'bot' : 'user', message: `메시지${i}` })),
+      { type: 'bot', message: '서버와 통신 중이에요...', excludeFromHistory: true },
+    ];
+    const history = buildChatHistory(messages);
+
+    expect(history).toHaveLength(8);
+    expect(history[0]).toEqual({ role: 'user', content: '메시지2' });
+    expect(history[7]).toEqual({ role: 'assistant', content: '메시지9' });
+  });
+});
+
+describe('toPersistableMessages', () => {
+  test('로딩 메시지와 위젯을 빼고 저장', () => {
+    const saved = toPersistableMessages([
+      { id: 1, type: 'bot', message: '기록했어요', widget: 'expenseUndo', payload: { expenseIds: ['a'] }, loading: true, delay: 100 },
+      { id: 'loading-msg', type: 'bot', message: '서버와 통신 중...' },
+    ], 'loading-msg');
+
+    expect(saved).toEqual([{ id: 1, type: 'bot', message: '기록했어요', loading: false }]);
   });
 });
 

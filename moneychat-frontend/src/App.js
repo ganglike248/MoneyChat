@@ -4,13 +4,26 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import ChatbotPage from './components/ChatbotPage';
-import { BACKEND_BASE_URL } from './api';
+import { wakeUpServer } from './api';
+
+// Render 무료 서버가 잠들기(15분) 전에 다시 깨우는 간격
+const WAKE_UP_INTERVAL = 10 * 60 * 1000;
 
 function App() {
+  // 앱을 보고 있는 동안에는 서버가 잠들지 않도록 주기적으로 깨움
   useEffect(() => {
-    fetch(`${BACKEND_BASE_URL}/health`).catch((error) => {
-      console.warn('Wake-up ping failed:', error);
-    });
+    const wakeUpIfVisible = () => {
+      if (document.visibilityState === 'visible') wakeUpServer();
+    };
+
+    wakeUpServer();
+    const interval = setInterval(wakeUpIfVisible, WAKE_UP_INTERVAL);
+    document.addEventListener('visibilitychange', wakeUpIfVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', wakeUpIfVisible);
+    };
   }, []);
 
   return (

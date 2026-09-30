@@ -4,36 +4,51 @@ import { auth, db } from '../firebase/firebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
+import { getAuthErrorMessage } from '../authErrors';
 import '../styles/SignupPage.css';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // const [nickname, setNickname] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
   // 회원가입
   const handleSignup = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
 
     if (password.length < 6) {
-      alert('비밀번호는 최소 6자 이상이어야 합니다.');
+      setErrorMessage('비밀번호는 최소 6자 이상이어야 합니다.');
       return;
     }
-    
+
+    if (password !== passwordConfirm) {
+      setErrorMessage('비밀번호가 서로 일치하지 않습니다.');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
-      // Firestore에 사용자의 닉네임 저장
-      await setDoc(doc(db, "users", user.uid), {
-        // nickname: nickname,
-        email: email
-      });
-      alert('환영합니다!');
-      navigate('/');
+      // Firestore에 사용자 정보 저장 (실패해도 계정은 만들어졌으므로 가입은 계속 진행)
+      try {
+        await setDoc(doc(db, "users", user.uid), {
+          email: user.email
+        });
+      } catch (profileError) {
+        console.error('사용자 정보 저장 실패:', profileError);
+      }
+
+      // 가입과 동시에 로그인되므로 바로 챗봇 화면으로 이동
+      navigate('/chatbot', { replace: true });
     } catch (error) {
-      alert('회원가입 실패: ' + error.message);
+      setErrorMessage(getAuthErrorMessage(error));
+      setIsLoading(false);
     }
   };
 
@@ -58,6 +73,8 @@ const SignupPage = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="SignupPage_input"
+            autoComplete="email"
+            required
           />
           <input
             type="password"
@@ -65,15 +82,22 @@ const SignupPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="SignupPage_input"
+            autoComplete="new-password"
+            required
           />
-          {/* <input
-            type="text"
-            placeholder="닉네임"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
+          <input
+            type="password"
+            placeholder="비밀번호 확인"
+            value={passwordConfirm}
+            onChange={(e) => setPasswordConfirm(e.target.value)}
             className="SignupPage_input"
-          /> */}
-          <button type="submit" className="SignupPage_button">회원가입</button>
+            autoComplete="new-password"
+            required
+          />
+          {errorMessage && <p className="SignupPage_error" role="alert">{errorMessage}</p>}
+          <button type="submit" className="SignupPage_button" disabled={isLoading}>
+            {isLoading ? '가입 중...' : '회원가입'}
+          </button>
         </form>
         <Link to="/" className="SignupPage_loginLink">이미 계정이 있으신가요? 로그인</Link>
       </div>

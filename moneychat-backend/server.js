@@ -5,6 +5,7 @@ const { rateLimit } = require('express-rate-limit');
 const { initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 require('dotenv').config(); // 환경 변수 로드
+const { CATEGORIES, parseDateString, normalizeAnalysis, normalizeHistory, getServerToday } = require('./analysis');
 
 // Express 애플리케이션 생성
 const app = express();
@@ -87,25 +88,6 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-// GPT 응답 검증 및 정리
-// 금액이 양수가 아니거나 항목/카테고리가 없으면 지출로 처리하지 않음
-const normalizeAnalysis = (raw) => {
-    const feedback = typeof raw?.feedback === 'string' && raw.feedback.trim()
-        ? raw.feedback.trim()
-        : '죄송해요, 다시 한 번 말씀해주시겠어요?';
-    const amount = typeof raw?.amount === 'string'
-        ? Number(raw.amount.replace(/[^\d.]/g, ''))
-        : raw?.amount;
-    const subject = typeof raw?.subject === 'string' ? raw.subject.trim() : '';
-    const category = typeof raw?.category === 'string' ? raw.category.trim() : '';
-
-    if (raw?.hasExpense === true && Number.isFinite(amount) && amount > 0 && subject && category) {
-        return { hasExpense: true, amount: Math.round(amount), subject, category, feedback };
-    }
-
-    return { hasExpense: false, amount: null, subject: null, category: null, feedback };
-};
-
 const isNonNegativeNumber = (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 
 // 서버 상태 확인을 위한 루트 경로 핸들러
@@ -137,7 +119,10 @@ app.post('/api/analyze-message', requireAuth, apiLimiter, async (req, res) => {
             throw new Error('OpenAI API key is not configured');
         }
 
-        const { message } = req.body;
+        const { message, history } = req.body;
+        // 사용자 기기 기준 오늘 날짜 (서버와 시간대가 다를 수 있으므로 클라이언트 값 사용)
+        const today = parseDateString(req.body.today) ? req.body.today : getServerToday();
+        const weekday = ['일', '월', '화', '수', '목', '금', '토'][parseDateString(today).getUTCDay()];
 
         if (!message || typeof message !== 'string' || !message.trim()) {
             return res.status(400).json({
@@ -159,30 +144,43 @@ app.post('/api/analyze-message', requireAuth, apiLimiter, async (req, res) => {
             model: OPENAI_MODEL,
             messages: [{
                 role: "system",
-                content: `당신은 친근하고 도움이 되는 챗봇 AI 도우미입니다.
-                사용자의 메시지에서 지출 관련 정보를 추출하고, 주제와 카테고리로 정리해주세요. 또한, 다른 일상적인 대화에도 자연스럽게 응답할 수 있습니다.
+                content: `당신은 친근하고 도움이 되는 가계부 챗봇 '머니챗'입니다.
+                사용자의 메시지에서 지출 정보를 추출하거나, 사용자가 원하는 기능(의도)을 파악해주세요. 다른 일상적인 대화에도 자연스럽게 응답할 수 있습니다.
+                오늘 날짜는 ${today} (${weekday}요일)입니다.
 
-                카테고리 정리 규칙:
-                1. 원본 주제는 사용자가 입력한 실제 지출 항목 (예: 나이키 신발, 아메리카노)
-                2. 카테고리는 더 넓은 분류 (예: 패션, 카페)
-                3. 기본 카테고리: 식사, 카페, 교통, 패션, 문화, 의료, 교육, 생활 등
-                4. amount는 원 단위의 양의 정수 (예: "8천원" → 8000)
+                지출 추출 규칙:
+                1. 한 메시지에 지출이 여러 개면 모두 expenses 배열에 넣기 (예: "점심 8000 커피 4500" → 2개)
+                2. subject는 사용자가 입력한 실제 지출 항목 (예: 나이키 신발, 아메리카노)
+                3. category는 반드시 다음 중 하나: ${CATEGORIES.join(', ')}
+                4. amount는 원 단위의 양의 정수 (예: "8천원" → 8000, "만 오천원" → 15000)
+                5. date는 지출한 날짜(YYYY-MM-DD). "어제", "지난 금요일" 같은 표현은 오늘 날짜 기준으로 계산하고, 언급이 없으면 오늘
+                6. 금액을 모르면 지출로 저장하지 말고 feedback에서 금액을 물어보기
+                7. 이전 대화에서 금액이나 항목을 물어본 뒤 사용자가 답했다면, 이전 대화와 합쳐서 지출로 추출
+
+                의도(intent) 규칙:
+                - expense: 지출을 기록하려는 메시지
+                - summary: 오늘/이번 주/이번 달에 얼마 썼는지 묻는 메시지 (period: today, week, month 중 하나)
+                - detail: 이번 달 지출 내역을 자세히 보고 싶어 하는 메시지
+                - recent: 가장 최근 지출을 묻는 메시지
+                - feedback: 지출 패턴 분석이나 소비 조언을 원하는 메시지
+                - chat: 그 외 일상적인 대화
+                summary, detail, recent, feedback일 때는 사용자의 지출 데이터를 모르므로 금액을 지어내지 말고, feedback은 짧게 작성
 
                 일상적인 대화 규칙:
                 1. 자연스럽고 친근한 톤으로 응답
                 2. 대화 맥락을 고려한 적절한 답변 제공
                 3. 가능한 한 지출 관리나 재무 관련 주제로 자연스럽게 연결
-                4. 사용자의 메시지에 지출 관련 정보가 포함되지 않아도 자연스러운 답변 제공
 
                 응답은 다음 JSON 형식으로 제공:
                 {
-                    "hasExpense": boolean,
-                    "amount": number | null,
-                    "subject": string | null,
-                    "category": string | null,
+                    "intent": "expense" | "summary" | "detail" | "recent" | "feedback" | "chat",
+                    "period": "today" | "week" | "month" | null,
+                    "expenses": [{ "subject": string, "category": string, "amount": number, "date": "YYYY-MM-DD" }],
                     "feedback": string
                 }`
-            }, {
+            },
+            ...normalizeHistory(history),
+            {
                 role: "user",
                 content: message
             }],
@@ -190,7 +188,7 @@ app.post('/api/analyze-message', requireAuth, apiLimiter, async (req, res) => {
         });
 
         // 분석 결과 파싱, 검증 및 응답
-        const analysis = normalizeAnalysis(JSON.parse(response.choices[0].message.content));
+        const analysis = normalizeAnalysis(JSON.parse(response.choices[0].message.content), today);
 
         res.json(analysis);
     } catch (error) {
