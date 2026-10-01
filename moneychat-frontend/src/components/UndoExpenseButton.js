@@ -1,5 +1,6 @@
 // moneychat-frontend/src/components/UndoExpenseButton.js
 import React, { useState } from 'react';
+import { Undo2 } from 'lucide-react';
 
 const UndoExpenseButton = (props) => {
     const [isUsed, setIsUsed] = useState(false);
@@ -19,7 +20,8 @@ const UndoExpenseButton = (props) => {
 
     return (
         <button className="expense-undo-button" onClick={handleUndo} type="button">
-            ↩ {expenseIds.length > 1 ? `${expenseIds.length}건 모두 취소하기` : '취소하기'}
+            <Undo2 size={14} aria-hidden="true" />
+            {expenseIds.length > 1 ? `${expenseIds.length}건 모두 취소하기` : '취소하기'}
         </button>
     );
 };

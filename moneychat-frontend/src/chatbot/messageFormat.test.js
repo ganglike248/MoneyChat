@@ -1,6 +1,6 @@
 import {
   parseInline, parseFormattedText, formatMessageTime, getMessageText,
-  withDateDividers, formatDividerDate, DATE_DIVIDER_TYPE,
+  withDateDividers, formatDividerDate, DATE_DIVIDER_TYPE, stripEmoji,
 } from './messageFormat';
 
 describe('parseInline', () => {
@@ -95,5 +95,25 @@ describe('getMessageText', () => {
     expect(getMessageText({ text: '새 형식', message: { fake: 'element' } })).toBe('새 형식');
     expect(getMessageText({ message: '예전 형식' })).toBe('예전 형식');
     expect(getMessageText({ message: { fake: 'element' } })).toBeNull();
+  });
+});
+
+describe('stripEmoji', () => {
+  test('이모지와 바로 뒤 공백을 지움', () => {
+    expect(stripEmoji('📅 9월 지출')).toBe('9월 지출');
+    expect(stripEmoji('⚠️ 예산 초과')).toBe('예산 초과');
+    expect(stripEmoji('없습니다. 💸')).toBe('없습니다. ');
+  });
+
+  test('합쳐진 이모지와 숫자 키캡도 처리', () => {
+    expect(stripEmoji('👨‍👩‍👧 가족 1️⃣ 첫째')).toBe('가족 1 첫째');
+  });
+
+  test('일반 기호와 한글은 그대로', () => {
+    expect(stripEmoji('• 식사: 8,000원 · 50%')).toBe('• 식사: 8,000원 · 50%');
+  });
+
+  test('봇 메시지 표시에 적용', () => {
+    expect(parseFormattedText('💰 **총 5,000원**')).toEqual([[{ text: '총 5,000원', bold: true }]]);
   });
 });

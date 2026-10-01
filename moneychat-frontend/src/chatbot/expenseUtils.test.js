@@ -1,7 +1,7 @@
 import {
   getPeriodStart, toAmount, summarizeExpenses, isValidExpenseItem, formatFeedback,
   toLocalDateString, expenseDateFromString, buildChatHistory, toPersistableMessages,
-  getMonthRange, getPeriodRange, formatMonthLabel, getBudgetStatus, formatBudgetLine, toCategoryRows,
+  getMonthRange, getPeriodRange, formatMonthLabel, getBudgetStatus, formatBudgetLine, toCategoryRows, formatKoreanAmount,
 } from './expenseUtils';
 
 describe('getPeriodRange / getMonthRange', () => {
@@ -44,13 +44,13 @@ describe('getBudgetStatus / formatBudgetLine', () => {
   test('남은 금액과 사용률', () => {
     const status = getBudgetStatus(500000, 342000);
     expect(status).toEqual({ budget: 500000, spent: 342000, remaining: 158000, percent: 68, over: false });
-    expect(formatBudgetLine(status)).toBe('💰 이번 달 예산 500,000원 중 68% 사용 · 남은 금액 158,000원');
+    expect(formatBudgetLine(status)).toBe('이번 달 예산 500,000원 중 68% 사용 · 남은 금액 158,000원');
   });
 
   test('예산 초과', () => {
     const status = getBudgetStatus(300000, 342000);
     expect(status.over).toBe(true);
-    expect(formatBudgetLine(status)).toBe('⚠️ 이번 달 예산을 42,000원 초과했어요. (예산 300,000원)');
+    expect(formatBudgetLine(status)).toBe('이번 달 예산을 42,000원 초과했어요. (예산 300,000원)');
   });
 });
 
@@ -191,5 +191,15 @@ describe('buildChatHistory (표시용 요소가 있는 메시지)', () => {
 describe('formatFeedback', () => {
   test('번호 목록을 문단으로 나눔', () => {
     expect(formatFeedback('1. 식비가 많아요. 2. 카페를 줄여보세요.')).toBe('식비가 많아요.\n\n카페를 줄여보세요.');
+  });
+});
+
+describe('formatKoreanAmount', () => {
+  test('만 단위로 끊어서 표시', () => {
+    expect(formatKoreanAmount(8000)).toBe('8,000원');
+    expect(formatKoreanAmount(1500000)).toBe('150만원');
+    expect(formatKoreanAmount(1234567)).toBe('123만 4,567원');
+    expect(formatKoreanAmount(150000000)).toBe('1억 5,000만원');
+    expect(formatKoreanAmount(100000000)).toBe('1억원');
   });
 });

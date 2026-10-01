@@ -21,9 +21,16 @@ export const parseInline = (line) => {
     .filter((segment) => segment.text);
 };
 
-// 여러 줄 텍스트를 줄별 조각 목록으로 변환 ("### 제목" 줄은 굵게 표시)
+// 이모지 제거 (GPT 답변이나 예전에 저장된 대화에 남아 있는 이모지도 표시하지 않음)
+// 이모지 바로 뒤의 공백 하나도 함께 지움 ("📅 9월" → "9월")
+const EMOJI_PATTERN = /\p{Extended_Pictographic}[\u{FE0F}\u{1F3FB}-\u{1F3FF}]?(?:\u{200D}\p{Extended_Pictographic}\u{FE0F}?)* ?/gu;
+const EMOJI_LEFTOVER_PATTERN = /[\u{FE0F}\u{20E3}\u{200D}]/gu;
+
+export const stripEmoji = (text) => text.replace(EMOJI_PATTERN, '').replace(EMOJI_LEFTOVER_PATTERN, '');
+
+// 여러 줄 텍스트를 줄별 조각 목록으로 변환 ("### 제목" 줄은 굵게 표시, 이모지는 제거)
 export const parseFormattedText = (text) =>
-  text.split('\n').map((line) => {
+  stripEmoji(text).split('\n').map((line) => {
     const heading = line.match(/^\s*#{1,6}\s+(.*)$/);
     if (heading) return parseInline(heading[1]).map((segment) => ({ ...segment, bold: true }));
     return parseInline(line);

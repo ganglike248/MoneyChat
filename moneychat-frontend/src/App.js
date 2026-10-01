@@ -4,6 +4,8 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import ChatbotPage from './components/ChatbotPage';
+import ExpensesPage from './components/ExpensesPage';
+import UpdateBanner from './components/UpdateBanner';
 import { wakeUpServer } from './api';
 
 // Render 무료 서버가 잠들기(15분) 전에 다시 깨우는 간격
@@ -28,10 +30,12 @@ function App() {
 
   return (
     <Router>
+      <UpdateBanner />
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/chatbot" element={<ChatbotPage />} />
+        <Route path="/expenses" element={<ExpensesPage />} />
       </Routes>
     </Router>
   );

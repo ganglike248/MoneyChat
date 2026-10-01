@@ -20,7 +20,8 @@ initializeApp({
 });
 
 // 사용할 GPT 모델 (환경 변수로 교체 가능)
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
+// gpt-3.5-turbo는 2026-10-23 서비스 종료 예정이라 비슷한 가격대의 gpt-4.1-mini 사용 (Render 환경 변수 OPENAI_MODEL이 있으면 그 값이 우선)
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
 
 // 사용자 메시지 최대 길이 (토큰 비용 제한)
 const MAX_MESSAGE_LENGTH = 500;
@@ -154,7 +155,7 @@ app.post('/api/analyze-message', requireAuth, apiLimiter, async (req, res) => {
                 3. category는 반드시 다음 중 하나: ${CATEGORIES.join(', ')}
                 4. amount는 원 단위의 양의 정수 (예: "8천원" → 8000, "만 오천원" → 15000)
                 5. date는 지출한 날짜(YYYY-MM-DD). "어제", "지난 금요일" 같은 표현은 오늘 날짜 기준으로 계산하고, 언급이 없으면 오늘
-                6. 금액을 모르면 지출로 저장하지 말고 feedback에서 금액을 물어보기
+                6. 금액을 모르면 지출로 저장하지 말고 reply에서 금액을 물어보기
                 7. 이전 대화에서 금액이나 항목을 물어본 뒤 사용자가 답했다면, 이전 대화와 합쳐서 지출로 추출
 
                 의도(intent) 규칙:
@@ -165,12 +166,15 @@ app.post('/api/analyze-message', requireAuth, apiLimiter, async (req, res) => {
                 - feedback: 지출 패턴 분석이나 소비 조언을 원하는 메시지
                 - budget: 한 달 예산을 정하거나 바꾸는 메시지 (budget: 원 단위 양의 정수, 예산을 없애달라고 하면 0)
                 - chat: 그 외 일상적인 대화
-                summary, detail, recent, feedback, budget일 때는 사용자의 지출 데이터를 모르므로 금액을 지어내지 말고, feedback은 짧게 작성
+                summary, detail, recent, feedback, budget일 때는 사용자의 지출 데이터를 모르므로 금액을 지어내지 말고, reply는 한두 문장으로 짧게 작성
 
-                일상적인 대화 규칙:
-                1. 자연스럽고 친근한 톤으로 응답
-                2. 대화 맥락을 고려한 적절한 답변 제공
-                3. 가능한 한 지출 관리나 재무 관련 주제로 자연스럽게 연결
+                reply 규칙 (사용자에게 그대로 보여주는 답변):
+                1. intent와 상관없이 reply는 항상 비어 있지 않은 문장으로 작성
+                2. expense일 때는 기록한 지출에 대한 짧은 한마디 (예: "점심 맛있게 드셨나요?")
+                3. chat일 때는 지출과 관계없는 이야기나 질문이라도 그 내용에 맞는 실제 답을 자연스럽게 작성
+                4. 자연스럽고 친근한 톤으로, 대화 맥락을 고려해서 응답
+                5. 어울린다면 지출 관리나 재무 관련 주제로 자연스럽게 연결 (억지로 연결하지 않기)
+                6. 이모지는 사용하지 않기
 
                 응답은 다음 JSON 형식으로 제공:
                 {
@@ -178,7 +182,7 @@ app.post('/api/analyze-message', requireAuth, apiLimiter, async (req, res) => {
                     "period": "today" | "week" | "month" | "lastMonth" | null,
                     "expenses": [{ "subject": string, "category": string, "amount": number, "date": "YYYY-MM-DD" }],
                     "budget": number | null,
-                    "feedback": string
+                    "reply": string
                 }`
             },
             ...normalizeHistory(history),
@@ -223,7 +227,7 @@ app.post('/api/analyze-spending', requireAuth, apiLimiter, async (req, res) => {
         const messages = [
             {
                 role: "system",
-                content: "당신은 친근하고 전문적인 재무 상담사입니다. 사용자의 지출을 분석하고 실용적인 조언을 제공해주세요."
+                content: "당신은 친근하고 전문적인 재무 상담사입니다. 사용자의 지출을 분석하고 실용적인 조언을 제공해주세요. 답변에 이모지는 사용하지 마세요."
             },
             {
                 role: "user",

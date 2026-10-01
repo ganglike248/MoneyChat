@@ -44,7 +44,7 @@
 .SignupPage_input {
     /* 16px 미만이면 iOS에서 입력 시 화면이 확대됨 */
     font-size: 16px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e0;
     transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
     box-sizing: border-box;
@@ -60,7 +60,8 @@
     border: none;
     font-weight: 500;
     cursor: pointer;
-    background-color: #48bb78;
+    /* 흰 글자 대비 4.5:1 이상 */
+    background-color: #2f855a;
     color: white;
     transition: all 0.2s;
     margin-top: 0.5rem;
@@ -68,7 +69,7 @@
 }
 
 .SignupPage_button:hover {
-    background-color: #38a169;
+    background-color: #276749;
     transform: translateY(-1px);
 }
 
@@ -80,13 +81,13 @@
 
 .SignupPage_error {
     margin: 0;
-    color: #e53e3e;
+    color: #c53030;
     font-size: 0.8125rem;
     text-align: left;
 }
 
 .SignupPage_loginLink {
-    color: #4299e1;
+    color: #2b6cb0;
     text-decoration: none;
     font-size: 0.875rem;
     transition: color 0.2s;
@@ -95,6 +96,6 @@
 }
 
 .SignupPage_loginLink:hover {
-    color: #3182ce;
+    color: #2c5282;
     text-decoration: none;
 }

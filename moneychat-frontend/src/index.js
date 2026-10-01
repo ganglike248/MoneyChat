@@ -1,8 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// 앱 전체 폰트 (필요한 글자 범위의 파일만 내려받는 분할 버전)
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import './index.css';
+import './theme'; // 저장된 테마 적용 및 기기 설정 변경 감지
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { setWaitingWorker } from './serviceWorkerUpdate';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -18,6 +22,11 @@ if ('serviceWorker' in navigator) {
       .then(registration => {
         console.log('ServiceWorker 등록 성공:', registration.scope);
 
+        // 이전 방문 때 설치된 새 버전이 아직 적용되지 않고 기다리는 경우
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          setWaitingWorker(registration.waiting);
+        }
+
         // 1. 새로운 업데이트가 발견되었을 때의 처리
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
@@ -26,11 +35,8 @@ if ('serviceWorker' in navigator) {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               console.log('새로운 콘텐츠가 준비되었습니다.');
 
-              // 모바일 사용자에게 알림을 띄우고 수락 시 즉시 업데이트 진행
-              if (window.confirm('머니챗의 새로운 버전이 업데이트 되었습니다! 적용하시겠습니까?')) {
-                // 대기 중인 새 서비스 워커에게 즉시 제어권을 넘기도록 메시지 전송
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-              }
+              // 화면 위쪽 업데이트 안내 배너 표시 (사용자가 '업데이트'를 누르면 적용)
+              setWaitingWorker(newWorker);
             }
           });
         });

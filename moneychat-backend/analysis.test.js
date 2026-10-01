@@ -83,3 +83,13 @@ test('이전 대화는 허용된 역할만 최근 8개까지, 500자로 잘라�
     assert.equal(result.at(-1).content.length, 500);
     assert.deepEqual(normalizeHistory('bad'), []);
 });
+
+test('답변은 reply 필드를 우선 사용하고, 예전 형식인 feedback도 허용', () => {
+    assert.equal(normalizeAnalysis({ intent: 'chat', reply: '안녕하세요!' }, TODAY).feedback, '안녕하세요!');
+    assert.equal(normalizeAnalysis({ intent: 'chat', feedback: '반가워요!' }, TODAY).feedback, '반가워요!');
+    assert.equal(normalizeAnalysis({ intent: 'chat', reply: '  ', feedback: '반가워요!' }, TODAY).feedback, '반가워요!');
+});
+
+test('답변이 비어 있으면 기본 문구', () => {
+    assert.equal(normalizeAnalysis({ intent: 'chat', reply: '' }, TODAY).feedback, '죄송해요, 다시 한 번 말씀해주시겠어요?');
+});

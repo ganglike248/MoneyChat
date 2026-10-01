@@ -45,10 +45,21 @@ const toAmount = (value) => {
 
 // GPT 응답 검증 및 정리
 // 금액이 양수가 아니거나 항목이 없는 지출은 버리고, 목록에 없는 카테고리는 '기타'로 처리
+const FALLBACK_REPLY = '죄송해요, 다시 한 번 말씀해주시겠어요?';
+
+// GPT 답변 문장 (프롬프트의 reply 필드, 예전 형식인 feedback 필드도 허용)
+const getReply = (raw) => {
+    const reply = [raw?.reply, raw?.feedback].find((value) => typeof value === 'string' && value.trim());
+    if (reply) return reply.trim();
+
+    // 답변이 비어 있으면 원인을 확인할 수 있도록 형식만 기록 (사용자 메시지 내용은 남기지 않음)
+    console.warn('GPT 답변이 비어 있어 기본 문구 사용:', { intent: raw?.intent, keys: Object.keys(raw || {}) });
+    return FALLBACK_REPLY;
+};
+
+// 프론트엔드에는 답변을 feedback 필드로 전달
 const normalizeAnalysis = (raw, today) => {
-    const feedback = typeof raw?.feedback === 'string' && raw.feedback.trim()
-        ? raw.feedback.trim()
-        : '죄송해요, 다시 한 번 말씀해주시겠어요?';
+    const feedback = getReply(raw);
 
     const expenses = (Array.isArray(raw?.expenses) ? raw.expenses : [])
         .map((expense) => ({

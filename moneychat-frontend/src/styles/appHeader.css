@@ -1,0 +1,88 @@
+/* 앱 상단 헤더 (채팅, 지출 관리 페이지 공용) */
+
+.appHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 56px;
+    padding: 0 0.5rem;
+    flex-shrink: 0;
+    background-color: white;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.appHeader_iconButton {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: #2d3748;
+    cursor: pointer;
+}
+
+.appHeader_iconButton:hover {
+    background-color: #edf2f7;
+}
+
+.appHeader_title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.appHeader_logo {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: white;
+    box-shadow: 0 0 0 1px #cbd5e0;
+    flex-shrink: 0;
+}
+
+/* 가운데 제목형 헤더 (채팅 화면): 왼쪽 메뉴 버튼 | 가운데 로고+이름 | 오른쪽 빈 칸 */
+.appHeader--centered {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+}
+
+.appHeader--centered .appHeader_title {
+    justify-self: center;
+    gap: 0.375rem;
+    font-size: 1.0625rem;
+}
+
+.appHeader_spacer {
+    width: 44px;
+    height: 44px;
+}
+
+[data-theme="dark"] .appHeader {
+    background-color: #2d3748;
+    border-color: #4a5568;
+}
+
+[data-theme="dark"] .appHeader_iconButton,
+[data-theme="dark"] .appHeader_title {
+    color: #edf2f7;
+}
+
+[data-theme="dark"] .appHeader_iconButton:hover {
+    background-color: #4a5568;
+}
+
+[data-theme="dark"] .appHeader_logo {
+    box-shadow: none;
+}

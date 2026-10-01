@@ -6,103 +6,150 @@
     height: 100dvh;
     display: flex;
     flex-direction: column;
-    align-items: center;
     max-width: 600px;
     margin: 0 auto;
-    padding: 1.25rem;
     box-sizing: border-box;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    /* 슬라이드 메뉴가 이 영역 안에서 열리도록 */
+    position: relative;
+    overflow: hidden;
 }
 
 .chatbotPage_loading {
     margin: auto;
-    color: #718096;
-}
-
-.chatbotPage_headerDiv {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 0 0 1rem 0;
-    flex-direction: row;
-    flex-shrink: 0;
-}
-
-.chatbotPage_titleGroup {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-}
-
-.chatbotPage_logo {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    object-fit: cover;
-    /* 로고 이미지 가장자리의 흐린 원 테두리가 보이지 않도록 살짝 잘라냄 */
-    clip-path: circle(47%);
-    background-color: white;
-    flex-shrink: 0;
-}
-
-/* 상단 지출 요약 (누르면 이번 달 요약 보기) */
-.chatbotPage_stats {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.125rem;
-    min-width: 0;
-    padding: 0.25rem 0.5rem;
-    border: none;
-    border-radius: 8px;
-    background: none;
-    color: #2d3748;
-    text-align: left;
-    cursor: pointer;
-}
-
-.chatbotPage_stats:hover {
-    background-color: rgba(255, 255, 255, 0.5);
-}
-
-.chatbotPage_statsMain {
-    font-size: 1.25rem;
-    line-height: 1.3;
-}
-
-.chatbotPage_statsMain strong {
-    font-weight: 700;
-}
-
-.chatbotPage_statsSub {
-    font-size: 0.8125rem;
     color: #4a5568;
 }
 
-.chatbotPage_statsOver {
-    color: #e53e3e;
+/* 헤더 아래 본문 (요약 바 + 채팅) */
+.chatbotPage_body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== 상단 지출 요약 (오늘 / 이번 달 / 예산, 각 칸을 누르면 해당 내용 보기) ===== */
+.summaryBar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    flex-shrink: 0;
+    background-color: white;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.summaryBar_item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.0625rem;
+    min-width: 0;
+    padding: 0.375rem 0.875rem 0.4375rem;
+    border: none;
+    background: none;
+    color: #1a202c;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+/* 칸 사이 짧은 구분선 */
+.summaryBar_item + .summaryBar_item::before {
+    content: '';
+    position: absolute;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    left: 0;
+    width: 1px;
+    background-color: #cbd5e0;
+}
+
+.summaryBar_item:hover:not(:disabled) {
+    background-color: #f7fafc;
+}
+
+.summaryBar_item:disabled {
+    cursor: progress;
+}
+
+.summaryBar_label {
+    color: #4a5568;
+    font-size: 0.6875rem;
+    font-weight: 500;
+}
+
+.summaryBar_value {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.summaryBar_value--action {
+    color: #2b6cb0;
+    font-size: 0.875rem;
     font-weight: 600;
 }
 
-/* 실수로 누르지 않도록 덜 눈에 띄는 스타일 */
-.chatbotPage_logoutBtn {
-    flex-shrink: 0;
-    padding: 0.5rem 0.875rem;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    border: 1px solid #feb2b2;
-    color: #e53e3e;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-weight: 500;
-    font-size: 0.8125rem;
+.summaryBar_value--over {
+    color: #c53030;
 }
 
-.chatbotPage_logoutBtn:hover {
-    background-color: #fff5f5;
+/* 예산 사용률 막대 */
+.summaryBar_meter {
+    width: 100%;
+    height: 3px;
+    margin-top: 0.1875rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: #e2e8f0;
+}
+
+.summaryBar_meter > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background-color: #38a169;
+}
+
+.summaryBar_meter--warn > span {
+    background-color: #dd6b20;
+}
+
+.summaryBar_meter--over > span {
+    background-color: #e53e3e;
+}
+
+/* 불러오는 중 자리 표시 */
+.summaryBar_skeleton {
+    display: block;
+    width: 72%;
+    height: 1.0625rem;
+    margin-top: 0.125rem;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #edf2f7 25%, #f7fafc 50%, #edf2f7 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes skeletonShimmer {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .summaryBar_skeleton {
+        animation: none;
+    }
 }
 
 /* 챗봇 영역이 헤더를 제외한 남은 높이를 모두 차지 */
@@ -121,10 +168,10 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+    /* 헤더 아래를 꽉 채우는 형태 (카드 모서리·그림자 없음) */
     background-color: white;
-    border-radius: 12px;
+    border-radius: 0;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .react-chatbot-kit-chat-inner-container {
@@ -143,14 +190,9 @@
     display: none !important;
 }
 
+/* 앱 헤더에 제목이 있으므로 챗봇 자체 헤더는 숨김 */
 .react-chatbot-kit-chat-header {
-    background-color: #4299e1;
-    color: white;
-    padding: 1rem;
-    text-align: center;
-    font-size: 1.125rem;
-    font-weight: 600;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: none;
 }
 
 .react-chatbot-kit-chat-message-container {
@@ -158,8 +200,14 @@
     min-height: 0;
     height: auto;
     overflow-y: auto;
-    padding: 1.25rem;
-    background-color: #f8fafc;
+    /* 아래쪽 여백은 마지막 말풍선의 전송 시간 자리만 남김 */
+    padding: 0.5rem 0.75rem 0;
+    background-color: #edf2f7;
+}
+
+/* 챗봇 라이브러리가 메시지 목록 끝에 넣는 빈 여백(padding-bottom: 15px) 제거 */
+.react-chatbot-kit-chat-message-container > div[style*="padding-bottom"]:empty {
+    display: none;
 }
 
 .react-chatbot-kit-chat-message-container::-webkit-scrollbar {
@@ -179,9 +227,9 @@
     gap: 0.5rem;
     width: 100%;
     background-color: white;
-    padding: 1rem;
+    padding: 0.5rem 0.75rem 0.625rem;
     box-sizing: border-box;
-    border-top: 1px solid #edf2f7;
+    border-top: 1px solid #e2e8f0;
 }
 
 .react-chatbot-kit-chat-input-form {
@@ -189,7 +237,7 @@
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .react-chatbot-kit-chat-input {
@@ -197,7 +245,7 @@
     min-width: 0;
     padding: 0.625rem 1rem;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e0;
     outline: none;
     /* 16px 미만이면 iOS에서 입력 시 화면이 확대됨 */
     font-size: 16px;
@@ -210,7 +258,7 @@
 }
 
 .react-chatbot-kit-chat-btn-send {
-    background-color: #4299e1;
+    background-color: #2b6cb0;
     border: none;
     border-radius: 8px;
     width: 40px;
@@ -224,7 +272,7 @@
 }
 
 .react-chatbot-kit-chat-btn-send:hover {
-    background-color: #3182ce;
+    background-color: #2c5282;
     transform: translateY(-1px);
 }
 
@@ -234,8 +282,8 @@
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
-    /* 아래 여백: 말풍선 밖에 표시되는 전송 시간 공간 */
-    margin: 0.5rem 0 1.5rem;
+    /* 아래 여백: 말풍선 밖에 표시되는 전송 시간 공간 (시간 글자 높이 + 간격) */
+    margin: 0.375rem 0 1.25rem;
 }
 
 .react-chatbot-kit-user-chat-message-container {
@@ -244,10 +292,9 @@
 
 /* 봇 말풍선이 화면 너비를 충분히 쓰도록 오른쪽 여백만 조금 남김 */
 .react-chatbot-kit-chat-bot-message-container {
-    padding-right: 10%;
+    padding-right: 8%;
 }
 
-.react-chatbot-kit-user-avatar-container,
 .react-chatbot-kit-chat-bot-avatar-container {
     width: 32px;
     height: 32px;
@@ -262,10 +309,6 @@
     margin: 0;
 }
 
-.react-chatbot-kit-user-avatar-container {
-    background-color: #48bb78;
-}
-
 .react-chatbot-kit-chat-bot-avatar-container {
     background-color: #4299e1;
     margin-right: 0.5rem;
@@ -278,15 +321,17 @@
     font-size: 0.875rem;
     line-height: 1.5;
     margin-right: 0.5rem !important;
-    margin-top: 17px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    /* 아바타 윗부분과 말풍선 윗부분을 맞춤 */
+    margin-top: 0;
 }
 
 .react-chatbot-kit-chat-bot-message {
     position: relative;
-    background-color: #c4e3ff;
-    color: #2d3748;
-    border: 1px solid #e2e8f0;
+    /* 회색 대화 배경 위의 흰 말풍선 (얇은 테두리 + 옅은 그림자로 경계 표시) */
+    background-color: white;
+    color: #1a202c;
+    border: 1px solid #dde3ea;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
     border-top-left-radius: 4px;
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -303,17 +348,21 @@
 
 .react-chatbot-kit-user-chat-message {
     position: relative;
-    background-color: #4299e1;
-    color: white;
+    /* 프로필이 없으므로 오른쪽 끝까지 붙임 */
+    margin-right: 0 !important;
+    /* 연한 파랑 배경 + 진한 글자 (얇은 테두리로 회색 대화 배경과 구분) */
+    background-color: #cfe0fc;
+    color: #1a202c;
+    border: 1px solid #b6cdf5;
     padding: 0.75rem 1rem;
     border-radius: 12px;
     border-top-right-radius: 4px;
-    max-width: 70%;
+    max-width: 78%;
     font-size: 0.875rem;
     line-height: 1.5;
     white-space: pre-wrap;
     word-wrap: break-word;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 /* 말풍선 밖 아래에 표시되는 전송 시간 */
@@ -322,7 +371,7 @@
     top: calc(100% + 0.25rem);
     font-size: 0.6875rem;
     line-height: 1.2;
-    color: #718096;
+    color: #4a5568;
     white-space: nowrap;
 }
 
@@ -341,7 +390,7 @@
     align-items: center;
     gap: 0.75rem;
     margin: 1rem 0;
-    color: #718096;
+    color: #4a5568;
     font-size: 0.75rem;
 }
 
@@ -350,13 +399,13 @@
     content: '';
     flex: 1;
     height: 1px;
-    background-color: #e2e8f0;
+    background-color: #cbd5e0;
 }
 
 .chat-date-divider span {
     padding: 0.25rem 0.75rem;
     border-radius: 999px;
-    background-color: #edf2f7;
+    background-color: #e2e8f0;
     white-space: nowrap;
 }
 
@@ -376,121 +425,12 @@
     margin-bottom: 0;
 }
 
-/* 메뉴 버튼 (입력창 영역의 마지막에 추가되므로 order로 맨 앞에 배치) */
-.custom-menu-button {
-    order: -1;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    border: none;
-    background-color: #4299e1;
-    color: white;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.custom-menu-button:hover {
-    background-color: #3182ce;
-    transform: translateY(-1px);
-}
-
-/* 메뉴 드롭다운 */
-.menu-dropdown {
-    position: absolute;
-    bottom: 70px;
-    left: 20px;
-    background-color: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    min-width: 280px;
-    z-index: 1000;
-    animation: slideUp 0.2s ease;
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.menu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    background-color: #f8fafc;
-    border-radius: 12px 12px 0 0;
-    font-weight: 600;
-    color: #2d3748;
-}
-
-.menu-close-button {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #718096;
-    padding: 0;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.menu-close-button:hover {
-    background-color: #e2e8f0;
-    color: #2d3748;
-}
-
-.menu-options {
-    padding: 0.5rem;
-}
-
-.menu-option-button {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: none;
-    background-color: transparent;
-    color: #2d3748;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    text-align: left;
-    margin-bottom: 0.25rem;
-}
-
-.menu-option-button:hover {
-    background-color: #f7fafc;
-    color: #4299e1;
-    transform: translateX(4px);
-}
-
-.menu-option-button:last-child {
-    margin-bottom: 0;
-}
-
 /* 말풍선 아래 위젯 버튼 (취소하기, 다시 보내기, 수정/삭제) */
 .expense-undo-button,
 .chat-widget-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
     margin: 0.25rem 0 0.5rem 2.5rem;
     padding: 0.4rem 0.875rem;
     border-radius: 999px;
@@ -503,7 +443,7 @@
 
 .expense-undo-button {
     border: 1px solid #feb2b2;
-    color: #e53e3e;
+    color: #c53030;
 }
 
 .expense-undo-button:hover {
@@ -519,211 +459,46 @@
     background-color: #ebf8ff;
 }
 
-/* 지출 수정/삭제 위젯 */
-.expense-manager {
-    margin: 0.25rem 10% 0.5rem 2.5rem;
-    background-color: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-    font-size: 0.875rem;
-    color: #2d3748;
-    overflow: hidden;
-}
-
-.expense-manager-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.625rem 0.875rem;
-    background-color: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
-    font-weight: 600;
-}
-
-.expense-manager-close {
-    border: none;
-    background: none;
-    color: #718096;
-    font-size: 1rem;
-    cursor: pointer;
-}
-
-.expense-manager-status,
-.expense-manager-empty {
-    margin: 0;
-    padding: 0.625rem 0.875rem;
-    color: #4a5568;
-}
-
-.expense-manager-status {
-    background-color: #ebf8ff;
-}
-
-.expense-manager-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    max-height: 320px;
-    overflow-y: auto;
-}
-
-.expense-manager-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 0.875rem;
-    border-bottom: 1px solid #edf2f7;
-}
-
-.expense-manager-item:last-child {
-    border-bottom: none;
-}
-
-.expense-manager-info {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    word-break: break-all;
-}
-
-.expense-manager-meta {
-    font-size: 0.75rem;
-    color: #718096;
-}
-
-.expense-manager-actions {
-    display: flex;
-    gap: 0.25rem;
-    flex-shrink: 0;
-}
-
-.expense-manager-actions button {
-    min-width: 36px;
-    height: 36px;
-    padding: 0 0.625rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
-    font-size: 0.875rem;
-}
-
-.expense-manager-actions button:disabled {
-    opacity: 0.5;
-    cursor: default;
-}
-
-.expense-manager-actions .expense-manager-save {
-    background-color: #4299e1;
-    border-color: #4299e1;
-    color: white;
-}
-
-.expense-manager-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-    width: 100%;
-}
-
-.expense-manager-form input,
-.expense-manager-form select {
-    width: 100%;
-    min-width: 0;
-    padding: 0.5rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 16px;
-    box-sizing: border-box;
-    background: white;
-}
-
-.expense-manager-form .expense-manager-actions {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
-}
-
 /* 반응형 디자인 */
 @media (max-width: 640px) {
-    .chatbotPage_container {
-        padding: 0.75rem;
-    }
-
-    .chatbotPage_headerDiv {
-        padding-bottom: 0.75rem;
-    }
-
-    .chatbotPage_logo {
-        width: 40px;
-        height: 40px;
-    }
-
-    .chatbotPage_statsMain {
-        font-size: 1.0625rem;
-    }
-
-    .chatbotPage_statsSub {
-        font-size: 0.75rem;
-    }
-
-    /* 모바일에서는 상단 제목과 겹치는 챗봇 헤더를 숨겨 대화 공간 확보 */
-    .react-chatbot-kit-chat-header {
-        display: none;
-    }
-
-    .react-chatbot-kit-chat-message-container {
-        padding: 0.75rem;
-    }
-
-    .react-chatbot-kit-chat-input-container {
-        padding: 0.75rem;
+    .summaryBar_item {
+        padding: 0.375rem 0.75rem 0.4375rem;
     }
 
     .react-chatbot-kit-chat-bot-message-container {
         padding-right: 4%;
     }
 
-    .react-chatbot-kit-chat-bot-avatar,
-    .react-chatbot-kit-user-avatar {
+    .react-chatbot-kit-chat-bot-avatar {
         width: 28px;
         height: 28px;
-    }
-
-    .menu-dropdown {
-        min-width: 260px;
-        left: 10px;
-    }
-
-    .menu-option-button {
-        font-size: 0.8rem;
-        padding: 0.6rem 0.8rem;
-    }
-
-    .expense-manager {
-        margin-right: 4%;
     }
 }
 
 /* ===== 챗봇 아바타 ===== */
 .chatbot-avatar-img {
+    display: block;
     width: 32px;
     height: 32px;
+    flex-shrink: 0;
     border-radius: 50%;
     object-fit: cover;
-    clip-path: circle(47%);
     background-color: white;
+    /* clip-path 대신 border-radius를 써야 원 테두리가 매끄럽게 그려짐 */
+    box-shadow: 0 0 0 1px #cbd5e0;
 }
 
 /* ===== 오프라인 안내 ===== */
 .chatbotPage_offline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     width: 100%;
-    margin-bottom: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
+    margin: 0;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-bottom: 1px solid #fbd38d;
     background-color: #fffaf0;
-    border: 1px solid #fbd38d;
     color: #975a16;
     font-size: 0.8125rem;
     box-sizing: border-box;
@@ -743,10 +518,10 @@
 .quick-actions {
     display: flex;
     gap: 0.375rem;
-    padding: 0.5rem 1rem 0;
+    padding: 0.5rem 0.75rem 0;
     overflow-x: auto;
     background-color: white;
-    border-top: 1px solid #edf2f7;
+    border-top: 1px solid #e2e8f0;
     scrollbar-width: none;
     flex-shrink: 0;
 }
@@ -756,11 +531,14 @@
 }
 
 .quick-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     flex-shrink: 0;
     padding: 0.375rem 0.75rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e0;
     border-radius: 999px;
-    background-color: #f8fafc;
+    background-color: #f1f5f9;
     color: #2d3748;
     font-size: 0.8125rem;
     white-space: nowrap;
@@ -768,14 +546,43 @@
     transition: background-color 0.2s ease;
 }
 
-.quick-action:hover {
+.quick-action:hover:not(:disabled) {
     background-color: #ebf8ff;
-    border-color: #bee3f8;
+    border-color: #90cdf4;
+}
+
+.quick-action:disabled {
+    opacity: 0.5;
+    cursor: progress;
+}
+
+/* 선택된 금액 (예산 프리셋) */
+.quick-action[aria-pressed="true"] {
+    background-color: #ebf8ff;
+    border-color: #2b6cb0;
+    color: #2b6cb0;
+    font-weight: 600;
+}
+
+/* 화면 밖에 버튼이 더 있으면 해당 쪽 가장자리를 흐리게 */
+.quick-actions--fade-right {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+}
+
+.quick-actions--fade-left {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 32px);
+    mask-image: linear-gradient(to right, transparent, #000 32px);
+}
+
+.quick-actions--fade-left.quick-actions--fade-right {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
 }
 
 .quick-action-example {
     background-color: #ebf8ff;
-    border-color: #bee3f8;
+    border-color: #90cdf4;
     color: #2b6cb0;
 }
 
@@ -801,7 +608,10 @@
 .new-message-button {
     position: absolute;
     left: 50%;
-    bottom: 120px;
+    bottom: 108px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     transform: translateX(-50%);
     z-index: 10;
     padding: 0.5rem 1rem;
@@ -822,6 +632,9 @@
 }
 
 .summary-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
     font-size: 0.8125rem;
     color: #4a5568;
 }
@@ -861,7 +674,7 @@
     height: 6px;
     margin-top: 0.25rem;
     border-radius: 999px;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: #e2e8f0;
     overflow: hidden;
 }
 
@@ -907,7 +720,7 @@
 }
 
 .budget-bar-over {
-    color: #e53e3e;
+    color: #c53030;
     font-weight: 600;
 }
 
@@ -915,7 +728,7 @@
 .chat-widget-form {
     margin: 0.25rem 10% 0.5rem 2.5rem;
     padding: 0.75rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e0;
     border-radius: 12px;
     background-color: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -931,7 +744,7 @@
     flex: 1;
     min-width: 0;
     padding: 0.5rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e0;
     border-radius: 6px;
     font-size: 16px;
 }
@@ -940,7 +753,7 @@
     padding: 0.5rem 0.875rem;
     border: none;
     border-radius: 6px;
-    background-color: #4299e1;
+    background-color: #2b6cb0;
     color: white;
     cursor: pointer;
 }
@@ -950,7 +763,7 @@
     padding: 0;
     border: none;
     background: none;
-    color: #718096;
+    color: #4a5568;
     font-size: 0.8125rem;
     text-decoration: underline;
     cursor: pointer;
@@ -958,161 +771,530 @@
 
 .chat-widget-form-error {
     margin: 0.5rem 0 0;
-    color: #e53e3e;
+    color: #c53030;
     font-size: 0.8125rem;
 }
 
-.expense-manager-month {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.expense-manager-month button {
-    padding: 0.125rem 0.375rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    background: white;
+/* 입력한 금액을 읽기 쉽게 보여주는 미리보기 ("150만원") */
+.amount-preview {
+    margin: 0.375rem 0 0;
     color: #4a5568;
-    font-size: 0.75rem;
-    cursor: pointer;
+    font-size: 0.8125rem;
 }
 
-.expense-manager-month button:disabled {
-    opacity: 0.35;
-    cursor: default;
+.chat-widget-form-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+}
+
+/* 답변을 기다리는 동안 표시하는 점 3개 애니메이션 */
+.chat-typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 1.4em;
+}
+
+.chat-typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+    opacity: 0.4;
+    animation: typingDot 1.2s ease-in-out infinite;
+}
+
+.chat-typing span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.chat-typing span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes typingDot {
+    0%, 60%, 100% {
+        opacity: 0.4;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chat-typing span {
+        animation: none;
+    }
 }
 
 /* ===== 다크 모드 (기기 설정을 따름) ===== */
-@media (prefers-color-scheme: dark) {
-    .chatbotPage_container {
-        background: linear-gradient(135deg, #1a202c 0%, #2a3448 100%);
+[data-theme="dark"] .chatbotPage_container {
+    background: linear-gradient(135deg, #1a202c 0%, #2a3448 100%);
+}
+
+[data-theme="dark"] .chatbotPage_loading {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .summary-card-title,
+[data-theme="dark"] .summary-card-row-head em,
+[data-theme="dark"] .budget-bar-label {
+    color: #a0aec0;
+}
+
+[data-theme="dark"] .amount-preview,
+[data-theme="dark"] .chat-widget-form-link {
+    color: #a0aec0;
+}
+
+[data-theme="dark"] .budget-bar-over,
+[data-theme="dark"] .chat-widget-form-error {
+    color: #feb2b2;
+}
+
+[data-theme="dark"] .quick-action[aria-pressed="true"] {
+    background-color: #2a4365;
+    border-color: #90cdf4;
+    color: #bee3f8;
+}
+
+[data-theme="dark"] .react-chatbot-kit-chat-container,
+[data-theme="dark"] .react-chatbot-kit-chat-input-container,
+[data-theme="dark"] .quick-actions {
+    background-color: #2d3748;
+    border-color: #4a5568;
+}
+
+[data-theme="dark"] .react-chatbot-kit-chat-message-container {
+    background-color: #1a202c;
+}
+
+[data-theme="dark"] .react-chatbot-kit-chat-bot-message {
+    background-color: #2d3748;
+    border-color: #3c4759;
+    color: #edf2f7;
+    box-shadow: none;
+}
+
+[data-theme="dark"] .react-chatbot-kit-user-chat-message {
+    background-color: #2a4a7f;
+    border-color: #2a4a7f;
+    color: #e8f0ff;
+    box-shadow: none;
+}
+
+[data-theme="dark"] .react-chatbot-kit-chat-input,
+[data-theme="dark"] .chat-widget-form-row input {
+    background-color: #1a202c;
+    border-color: #718096;
+    color: #edf2f7;
+}
+
+[data-theme="dark"] .chat-message-time,
+[data-theme="dark"] .chat-date-divider {
+    color: #a0aec0;
+}
+
+[data-theme="dark"] .chat-date-divider::before,
+[data-theme="dark"] .chat-date-divider::after {
+    background-color: #4a5568;
+}
+
+[data-theme="dark"] .chat-date-divider span {
+    background-color: #2d3748;
+}
+
+[data-theme="dark"] .quick-action {
+    background-color: #1a202c;
+    border-color: #5a6578;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .quick-action-example {
+    background-color: #2a4365;
+    border-color: #2c5282;
+    color: #bee3f8;
+}
+
+[data-theme="dark"] .summary-card-bar,
+[data-theme="dark"] .budget-bar-track {
+    background-color: #4a5568;
+}
+
+[data-theme="dark"] .summary-card-bar > div {
+    background-color: #90cdf4;
+}
+
+[data-theme="dark"] .chat-widget-form,
+[data-theme="dark"] .expense-undo-button,
+[data-theme="dark"] .chat-widget-button {
+    background-color: #2d3748;
+    border-color: #5a6578;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .chatbotPage_offline {
+    background-color: #3c2a10;
+    border-color: #975a16;
+    color: #fbd38d;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
     }
 
-    .chatbotPage_stats,
-    .chatbotPage_loading {
-        color: #e2e8f0;
-    }
-
-    .chatbotPage_stats:hover {
-        background-color: rgba(255, 255, 255, 0.08);
-    }
-
-    .chatbotPage_statsSub,
-    .summary-card-title,
-    .summary-card-row-head em,
-    .budget-bar-label {
-        color: #a0aec0;
-    }
-
-    .chatbotPage_logoutBtn {
-        background-color: transparent;
-        border-color: #9b2c2c;
-        color: #feb2b2;
-    }
-
-    .react-chatbot-kit-chat-container,
-    .react-chatbot-kit-chat-input-container,
-    .quick-actions {
-        background-color: #2d3748;
-        border-color: #4a5568;
-    }
-
-    .react-chatbot-kit-chat-message-container {
-        background-color: #1a202c;
-    }
-
-    .react-chatbot-kit-chat-bot-message {
-        background-color: #2c5282;
-        border-color: #2c5282;
-        color: #ebf8ff;
-    }
-
-    .react-chatbot-kit-chat-input,
-    .expense-manager-form input,
-    .expense-manager-form select,
-    .chat-widget-form-row input {
-        background-color: #1a202c;
-        border-color: #4a5568;
-        color: #edf2f7;
-    }
-
-    .chat-message-time,
-    .chat-date-divider {
-        color: #a0aec0;
-    }
-
-    .chat-date-divider::before,
-    .chat-date-divider::after {
-        background-color: #4a5568;
-    }
-
-    .chat-date-divider span {
-        background-color: #2d3748;
-    }
-
-    .quick-action {
-        background-color: #1a202c;
-        border-color: #4a5568;
-        color: #e2e8f0;
-    }
-
-    .quick-action-example {
-        background-color: #2a4365;
-        border-color: #2c5282;
-        color: #bee3f8;
-    }
-
-    .summary-card-bar,
-    .budget-bar-track {
-        background-color: rgba(0, 0, 0, 0.25);
-    }
-
-    .summary-card-bar > div {
-        background-color: #90cdf4;
-    }
-
-    .menu-dropdown,
-    .expense-manager,
-    .chat-widget-form,
-    .expense-undo-button,
-    .chat-widget-button,
-    .expense-manager-actions button,
-    .expense-manager-month button {
-        background-color: #2d3748;
-        border-color: #4a5568;
-        color: #e2e8f0;
-    }
-
-    .menu-header,
-    .expense-manager-header {
-        background-color: #1a202c;
-        border-color: #4a5568;
-        color: #e2e8f0;
-    }
-
-    .menu-option-button,
-    .expense-manager-status,
-    .expense-manager-empty {
-        color: #e2e8f0;
-    }
-
-    .menu-option-button:hover,
-    .expense-manager-status {
-        background-color: #1a202c;
-    }
-
-    .expense-manager-item {
-        border-color: #4a5568;
-    }
-
-    .expense-manager-meta {
-        color: #a0aec0;
-    }
-
-    .chatbotPage_offline {
-        background-color: #3c2a10;
-        border-color: #975a16;
-        color: #fbd38d;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
+
+/* ===== 왼쪽에서 열리는 슬라이드 메뉴 ===== */
+.drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 1000;
+    background-color: rgba(26, 32, 44, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+
+.drawer-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease;
+}
+
+.drawer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    width: min(300px, 82%);
+    background-color: white;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+    transform: translateX(-100%);
+    /* 닫혀 있을 때는 포커스·스크린 리더 대상에서 제외 */
+    visibility: hidden;
+    transition: transform 0.25s ease, visibility 0s linear 0.25s;
+}
+
+.drawer.is-open {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.25s ease;
+}
+
+.drawer-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 0.5rem 1rem 1rem;
+    border-bottom: 1px solid #cbd5e0;
+}
+
+.drawer-header img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: white;
+    box-shadow: 0 0 0 1px #cbd5e0;
+    flex-shrink: 0;
+}
+
+.drawer-profile {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.drawer-header strong {
+    color: #2d3748;
+    font-size: 1rem;
+}
+
+.drawer-header span {
+    overflow: hidden;
+    color: #4a5568;
+    font-size: 0.8125rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drawer-close {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: #4a5568;
+    font-size: 1.125rem;
+    cursor: pointer;
+}
+
+.drawer-close:hover {
+    background-color: #edf2f7;
+}
+
+.drawer-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+/* 메뉴 구역 (채팅으로 답변 / 페이지 이동) */
+.drawer-section + .drawer-section {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #cbd5e0;
+}
+
+.drawer-section-header {
+    padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.drawer-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
+.drawer-section--chat .drawer-section-title {
+    color: #2b6cb0;
+}
+
+.drawer-section--page .drawer-section-title {
+    color: #2f855a;
+}
+
+/* 구역 안의 세부 소제목 (지출 조회, 관리 · 분석 등) */
+.drawer-group + .drawer-group {
+    margin-top: 0.25rem;
+}
+
+.drawer-group-label {
+    margin: 0;
+    padding: 0.5rem 0.75rem 0.125rem;
+    color: #4a5568;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* 페이지로 이동하는 항목 오른쪽의 › 표시 */
+.drawer-item .drawer-item-trailing {
+    margin-left: auto;
+}
+
+.drawer-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 0.75rem;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: #2d3748;
+    font-size: 0.9375rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.drawer-item:hover:not(:disabled) {
+    background-color: #edf2f7;
+}
+
+.drawer-item:disabled {
+    opacity: 0.45;
+    cursor: progress;
+}
+
+.drawer-busy-note {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    color: #4a5568;
+    font-size: 0.75rem;
+}
+
+.drawer-footer {
+    padding: 0.5rem;
+    border-top: 1px solid #cbd5e0;
+}
+
+.drawer-item.drawer-item-logout {
+    color: #c53030;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .drawer,
+    .drawer.is-open,
+    .drawer-backdrop,
+    .drawer-backdrop.is-open {
+        transition: none;
+    }
+}
+
+/* 메뉴 항목 아이콘 */
+.drawer-item svg {
+    flex-shrink: 0;
+    color: #4a5568;
+}
+
+.drawer-item.drawer-item-logout svg {
+    color: inherit;
+}
+
+/* 다크 모드 전환 스위치 */
+.drawer-switch {
+    position: relative;
+    width: 40px;
+    height: 24px;
+    margin-left: auto;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background-color: #cbd5e0;
+    transition: background-color 0.2s ease;
+}
+
+.drawer-switch::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.drawer-item[aria-checked="true"] .drawer-switch {
+    background-color: #2b6cb0;
+}
+
+.drawer-item[aria-checked="true"] .drawer-switch::after {
+    transform: translateX(16px);
+}
+
+/* 슬라이드 메뉴 다크 모드 (위의 기본 스타일보다 뒤에 있어야 적용됨) */
+[data-theme="dark"] .drawer {
+    background-color: #2d3748;
+}
+
+[data-theme="dark"] .drawer-item,
+[data-theme="dark"] .drawer-header strong {
+    color: #edf2f7;
+}
+
+[data-theme="dark"] .drawer-item:hover:not(:disabled),
+[data-theme="dark"] .drawer-close:hover {
+    background-color: #4a5568;
+}
+
+[data-theme="dark"] .drawer-header,
+[data-theme="dark"] .drawer-footer {
+    border-color: #4a5568;
+}
+
+[data-theme="dark"] .drawer-header span,
+[data-theme="dark"] .drawer-group-label,
+[data-theme="dark"] .drawer-busy-note,
+[data-theme="dark"] .drawer-close {
+    color: #a0aec0;
+}
+
+[data-theme="dark"] .drawer-item.drawer-item-logout {
+    color: #feb2b2;
+}
+
+[data-theme="dark"] .drawer-item svg {
+    color: #a0aec0;
+}
+
+[data-theme="dark"] .drawer-item.drawer-item-logout svg {
+    color: inherit;
+}
+
+[data-theme="dark"] .drawer-switch {
+    background-color: #4a5568;
+}
+
+[data-theme="dark"] .drawer-item[aria-checked="true"] .drawer-switch {
+    background-color: #63b3ed;
+}
+
+[data-theme="dark"] .chatbot-avatar-img,
+[data-theme="dark"] .drawer-header img {
+    box-shadow: none;
+}
+
+[data-theme="dark"] .summaryBar {
+    background-color: #2d3748;
+    border-color: #4a5568;
+}
+
+[data-theme="dark"] .summaryBar_item {
+    color: #edf2f7;
+}
+
+[data-theme="dark"] .summaryBar_item + .summaryBar_item::before {
+    background-color: #4a5568;
+}
+
+[data-theme="dark"] .summaryBar_item:hover:not(:disabled) {
+    background-color: #364152;
+}
+
+[data-theme="dark"] .summaryBar_label {
+    color: #a0aec0;
+}
+
+[data-theme="dark"] .summaryBar_value--action {
+    color: #90cdf4;
+}
+
+[data-theme="dark"] .summaryBar_value--over {
+    color: #feb2b2;
+}
+
+[data-theme="dark"] .summaryBar_meter {
+    background-color: #4a5568;
+}
+
+[data-theme="dark"] .summaryBar_skeleton {
+    background: linear-gradient(90deg, #4a5568 25%, #556175 50%, #4a5568 75%);
+    background-size: 200% 100%;
+}
+
+[data-theme="dark"] .drawer-section + .drawer-section {
+    border-color: #4a5568;
+}
+
+[data-theme="dark"] .drawer-section--chat .drawer-section-title {
+    color: #90cdf4;
+}
+
+[data-theme="dark"] .drawer-section--page .drawer-section-title {
+    color: #9ae6b4;
+}
+

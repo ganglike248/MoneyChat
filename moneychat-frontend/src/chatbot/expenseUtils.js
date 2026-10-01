@@ -43,8 +43,8 @@ export const getBudgetStatus = (budget, spent) => {
 
 export const formatBudgetLine = (status) =>
   status.over
-    ? `⚠️ 이번 달 예산을 ${(-status.remaining).toLocaleString()}원 초과했어요. (예산 ${status.budget.toLocaleString()}원)`
-    : `💰 이번 달 예산 ${status.budget.toLocaleString()}원 중 ${status.percent}% 사용 · 남은 금액 ${status.remaining.toLocaleString()}원`;
+    ? `이번 달 예산을 ${(-status.remaining).toLocaleString()}원 초과했어요. (예산 ${status.budget.toLocaleString()}원)`
+    : `이번 달 예산 ${status.budget.toLocaleString()}원 중 ${status.percent}% 사용 · 남은 금액 ${status.remaining.toLocaleString()}원`;
 
 // 카테고리별 금액을 큰 순서로 정렬한 막대그래프용 데이터
 export const toCategoryRows = (byCategory, total) =>
@@ -56,6 +56,18 @@ export const toCategoryRows = (byCategory, total) =>
 export const toAmount = (value) => {
   const amount = typeof value === 'string' ? Number(value.replace(/[^\d.]/g, '')) : value;
   return Number.isFinite(amount) && amount > 0 ? Math.round(amount) : null;
+};
+
+// 큰 금액을 읽기 쉽게 표시 (1500000 → "150만원", 1234567 → "123만 4,567원")
+export const formatKoreanAmount = (amount) => {
+  const eok = Math.floor(amount / 100000000);
+  const man = Math.floor((amount % 100000000) / 10000);
+  const won = amount % 10000;
+  const parts = [];
+  if (eok) parts.push(`${eok.toLocaleString()}억`);
+  if (man) parts.push(`${man.toLocaleString()}만`);
+  if (won || parts.length === 0) parts.push(won.toLocaleString());
+  return `${parts.join(' ')}원`;
 };
 
 // 지출 목록을 총합, 카테고리별, 항목별 합계로 집계

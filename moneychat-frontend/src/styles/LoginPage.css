@@ -25,7 +25,7 @@
 }
 
 .LoginPage_subContainer h5 {
-    color: #718096;
+    color: #4a5568;
     margin-bottom: 2rem;
     font-weight: 400;
     font-size: 0.875rem;
@@ -47,7 +47,7 @@
 .LoginPage_password {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e0;
     border-radius: 8px;
     /* 16px 미만이면 iOS에서 입력 시 화면이 확대됨 */
     font-size: 16px;
@@ -66,9 +66,8 @@
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
 }
 
-/* 버튼 공통 스타일 */
-.LoginPage_LoginBtn,
-.LoginPage_signupBtn {
+/* 로그인 버튼 */
+.LoginPage_LoginBtn {
     width: 100%;
     padding: 0.75rem;
     border: none;
@@ -80,22 +79,13 @@
     color: white;
 }
 
+/* 흰 글자 대비 4.5:1 이상 */
 .LoginPage_LoginBtn {
-    background-color: #4299e1;
-    margin-bottom: 0.75rem;
-}
-
-.LoginPage_signupBtn {
-    background-color: #48bb78;
+    background-color: #2b6cb0;
 }
 
 .LoginPage_LoginBtn:hover {
-    background-color: #3182ce;
-    transform: translateY(-1px);
-}
-
-.LoginPage_signupBtn:hover {
-    background-color: #38a169;
+    background-color: #2c5282;
     transform: translateY(-1px);
 }
 
@@ -114,7 +104,7 @@
 }
 
 .LoginPage_error {
-    color: #e53e3e;
+    color: #c53030;
 }
 
 .LoginPage_info {
@@ -126,12 +116,49 @@
     padding: 0.5rem;
     border: none;
     background: none;
-    color: #718096;
+    color: #4a5568;
     font-size: 0.8125rem;
     cursor: pointer;
     text-decoration: underline;
 }
 
 .LoginPage_resetBtn:hover {
+    color: #2d3748;
+}
+/* 회원가입 안내 링크 */
+.LoginPage_signupText {
+    margin: 0.5rem 0 0;
     color: #4a5568;
+    font-size: 0.875rem;
+}
+
+.LoginPage_signupLink {
+    display: inline-block;
+    padding: 0.5rem 0.25rem;
+    color: #2b6cb0;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.LoginPage_signupLink:hover {
+    color: #2c5282;
+    text-decoration: underline;
+}
+
+/* 로그인 상태 확인 중 표시하는 로고 */
+.LoginPage_splashLogo {
+    width: 120px;
+    animation: splashPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes splashPulse {
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .LoginPage_splashLogo {
+        animation: none;
+    }
 }

@@ -5,52 +5,102 @@ import 'react-chatbot-kit/build/main.css';
 import { createConfig } from '../chatbot/config';
 import MessageParser from '../chatbot/MessageParser';
 import ActionProvider from '../chatbot/ActionProvider';
-import { loadChatHistory, clearChatHistory } from '../chatbot/chatHistory';
+import { loadChatHistory, clearOtherUsersChatHistory } from '../chatbot/chatHistory';
 import { getPeriodRange, getPeriodStart, summarizeExpenses, getBudgetStatus } from '../chatbot/expenseUtils';
 import { fetchExpensesInRange, fetchBudget } from '../expenseRepository';
 import { auth } from '../firebase/firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import {
+    Menu, X, WifiOff, ArrowDown, LogOut, Moon,
+    CalendarDays, CalendarRange, Calendar, CalendarClock, History, ChartPie, Wallet, Lightbulb, Table2,
+    MessageCircle, PanelsTopLeft, ChevronRight,
+} from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
+import { useTheme, toggleTheme } from '../theme';
+import '../styles/appHeader.css';
 import '../styles/chatbot.css';
 
-const DEFAULT_PLACEHOLDER = '예) 점심 8000';
+const DEFAULT_PLACEHOLDER = '예) 커피 5000';
 const BUSY_PLACEHOLDER = '답변을 기다리는 중이에요...';
 
 // 이 거리(px) 안에 있으면 맨 아래를 보고 있는 것으로 판단
 const BOTTOM_THRESHOLD = 80;
 
 // 메뉴 항목 (actions: ActionProvider가 제공하는 기능)
-const MENU_OPTIONS = [
-    { text: "📊 오늘 지출 확인", run: (actions) => actions.handleTodayExpenses() },
-    { text: "📅 이번 주 지출 확인", run: (actions) => actions.handleWeekExpenses() },
-    { text: "📈 이번 달 지출 확인", run: (actions) => actions.handleMonthExpenses() },
-    { text: "🗓 지난달 지출 확인", run: (actions) => actions.handleLastMonthExpenses() },
-    { text: "📋 지출 상세 · 수정", run: (actions) => actions.handleMonthDetailExpenses() },
-    { text: "🕒 최근 지출 알아보기", run: (actions) => actions.handleRecentExpense() },
-    { text: "🔍 지출 패턴 분석", run: (actions) => actions.handleExpenseFeedback() },
-    { text: "💰 예산 설정", run: (actions) => actions.handleBudgetSetting() },
+// 결과를 챗봇이 채팅으로 알려주는 항목과, 별도 화면으로 이동하는 항목을 구역으로 나눠 표시
+// (빠른 버튼은 자주 쓰는 채팅 기능의 바로가기)
+const MENU_SECTIONS = [
+    {
+        id: 'chat',
+        title: '채팅으로 답변',
+        TitleIcon: MessageCircle,
+        groups: [
+            {
+                label: '지출 조회',
+                options: [
+                    { text: "오늘 지출 확인", Icon: CalendarDays, run: (actions) => actions.handleTodayExpenses() },
+                    { text: "이번 주 지출 확인", Icon: CalendarRange, run: (actions) => actions.handleWeekExpenses() },
+                    { text: "이번 달 지출 확인", Icon: Calendar, run: (actions) => actions.handleMonthExpenses() },
+                    { text: "지난달 지출 확인", Icon: CalendarClock, run: (actions) => actions.handleLastMonthExpenses() },
+                    { text: "최근 지출 알아보기", Icon: History, run: (actions) => actions.handleRecentExpense() },
+                ],
+            },
+            {
+                label: '관리 · 분석',
+                options: [
+                    { text: "지출 패턴 분석", Icon: ChartPie, run: (actions) => actions.handleExpenseFeedback() },
+                    { text: "예산 설정", Icon: Wallet, run: (actions) => actions.handleBudgetSetting() },
+                ],
+            },
+            {
+                label: '도움말',
+                options: [
+                    { text: "사용법 보기", Icon: Lightbulb, run: (actions) => actions.handleShowGuide() },
+                ],
+            },
+        ],
+    },
+    {
+        id: 'page',
+        title: '페이지 이동',
+        TitleIcon: PanelsTopLeft,
+        groups: [
+            {
+                label: null,
+                options: [
+                    // page: 채팅이 아닌 별도 화면으로 이동하는 항목
+                    { text: "지출 관리 표", Icon: Table2, page: '/expenses' },
+                ],
+            },
+        ],
+    },
 ];
 
 // 입력창 위 빠른 버튼
+// 오늘 / 이번 달 / 예산은 위쪽 요약 바를 누르면 되므로 여기에는 그 외의 자주 쓰는 기능만 둠
 const QUICK_ACTIONS = [
-    { text: "📊 오늘", run: (actions) => actions.handleTodayExpenses() },
-    { text: "📅 이번 주", run: (actions) => actions.handleWeekExpenses() },
-    { text: "📈 이번 달", run: (actions) => actions.handleMonthExpenses() },
-    { text: "📋 상세·수정", run: (actions) => actions.handleMonthDetailExpenses() },
-    { text: "🕒 최근", run: (actions) => actions.handleRecentExpense() },
-    { text: "💰 예산", run: (actions) => actions.handleBudgetSetting() },
+    { text: "이번 주", run: (actions) => actions.handleWeekExpenses() },
+    { text: "지난달", run: (actions) => actions.handleLastMonthExpenses() },
+    { text: "최근", run: (actions) => actions.handleRecentExpense() },
+    { text: "패턴 분석", run: (actions) => actions.handleExpenseFeedback() },
 ];
 
-// 이번 달 지출이 없을 때 보여주는 입력 예시 (누르면 그대로 전송)
-const EXAMPLE_MESSAGES = ['점심 8000', '어제 택시 12000 커피 4500', '이번 주 얼마 썼어?'];
+// 이번 달 지출이 없을 때 빠른 버튼 맨 앞에 보여주는 사용법 안내
+// (예시 문장을 바로 보내면 실제 지출로 기록되므로, 기록 없이 사용법만 보여줌)
+const GUIDE_ACTION = { text: "사용법", run: (actions) => actions.handleShowGuide() };
 
 const ChatbotPage = () => {
     const navigate = useNavigate();
+    const theme = useTheme();
     const [uid, setUid] = useState(null); // 로그인 확인 전에는 null
+    const [email, setEmail] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isBusy, setIsBusy] = useState(false);
     const [isOnline, setIsOnline] = useState(() => navigator.onLine);
     const [hasNewMessage, setHasNewMessage] = useState(false);
+    const [logoutDialog, setLogoutDialog] = useState(null); // null: 닫힘, { busy, error }: 열림
+    const [quickScroll, setQuickScroll] = useState({ left: false, right: false }); // 빠른 버튼이 양옆에 더 있는지
     const [stats, setStats] = useState(null); // 상단 요약 { today, month, budgetStatus }
     // 챗봇 라이브러리가 그리는 영역 (메뉴 버튼, 빠른 버튼, 스크롤 관리에 사용)
     const [chatAreas, setChatAreas] = useState({ inner: null, messages: null, input: null });
@@ -59,6 +109,9 @@ const ChatbotPage = () => {
     const chatWrapperRef = useRef(null);
     const menuButtonRef = useRef(null);
     const menuRef = useRef(null);
+    const quickActionsRef = useRef(null);
+    const isBusyRef = useRef(false);
+    isBusyRef.current = isBusy;
 
     // 상단 요약(오늘/이번 달 지출, 예산) 갱신
     const refreshStats = useCallback(async () => {
@@ -96,11 +149,41 @@ const ChatbotPage = () => {
         if (actionProviderRef.current) run(actionProviderRef.current);
     }, []);
 
+    // 입력창 전송 전 검사: 비어 있거나 답변을 기다리는 중이면 전송하지 않음 (입력한 내용은 입력창에 그대로 남음)
+    const validateInput = useCallback((input) => input.trim().length > 0 && !isBusyRef.current, []);
+
+    // 이번 달 지출이 없으면 빠른 버튼 맨 앞에 사용법 버튼 표시
+    const showGuide = stats?.month === 0;
+
+    // 빠른 버튼이 화면 밖에 더 있으면 해당 쪽 가장자리를 흐리게 표시
+    const updateQuickScroll = useCallback(() => {
+        const el = quickActionsRef.current;
+        if (!el) return;
+        const next = {
+            left: el.scrollLeft > 4,
+            right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
+        };
+        setQuickScroll((prev) => (prev.left === next.left && prev.right === next.right ? prev : next));
+    }, []);
+
+    useEffect(() => {
+        const el = quickActionsRef.current;
+        if (!el) return;
+
+        updateQuickScroll();
+        const observer = new ResizeObserver(updateQuickScroll);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [chatAreas.inner, showGuide, updateQuickScroll]);
+
     // 로그인 확인 (새로고침 시 로그인 정보가 복원될 때까지 기다림)
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
             if (user) {
+                // 이 기기에 남아 있는 다른 계정의 대화 기록은 불러오기 전에 삭제
+                clearOtherUsersChatHistory(user.uid);
                 setUid(user.uid);
+                setEmail(user.email || '');
             } else {
                 navigate('/', { replace: true });
             }
@@ -210,53 +293,53 @@ const ChatbotPage = () => {
         if (input) input.placeholder = isBusy ? BUSY_PLACEHOLDER : DEFAULT_PLACEHOLDER;
     }, [chatAreas.input, isBusy]);
 
-    // 메뉴가 열리면 첫 항목에 포커스, 바깥을 누르거나 Esc를 누르면 닫기, 방향키로 항목 이동
+    // 메뉴를 닫고 메뉴 버튼으로 포커스를 돌려줌
+    const closeMenu = useCallback(() => {
+        setIsMenuOpen(false);
+        menuButtonRef.current?.focus();
+    }, []);
+
+    // 메뉴가 열리면 첫 항목에 포커스, Esc로 닫기, Tab은 메뉴 안에서만 이동
     useEffect(() => {
         if (!isMenuOpen) return;
 
-        const getOptions = () => [...(menuRef.current?.querySelectorAll('.menu-option-button') || [])];
-        getOptions()[0]?.focus();
+        const getFocusable = () => [...(menuRef.current?.querySelectorAll('button:not(:disabled)') || [])];
+        (menuRef.current?.querySelector('.drawer-item:not(:disabled)') || getFocusable()[0])?.focus();
 
-        const closeMenu = () => {
-            setIsMenuOpen(false);
-            menuButtonRef.current?.focus();
-        };
-
-        const handlePointerDown = (e) => {
-            if (e.target.closest('.menu-dropdown') || e.target.closest('.custom-menu-button')) return;
-            setIsMenuOpen(false);
-        };
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
                 closeMenu();
                 return;
             }
-
-            const options = getOptions();
-            const index = options.indexOf(document.activeElement);
-            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                e.preventDefault();
-                const step = e.key === 'ArrowDown' ? 1 : -1;
-                options[(index + step + options.length) % options.length]?.focus();
-            } else if (e.key === 'Home' || e.key === 'End') {
-                e.preventDefault();
-                options[e.key === 'Home' ? 0 : options.length - 1]?.focus();
+            if (e.key === 'Tab') {
+                const focusable = getFocusable();
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last?.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first?.focus();
+                }
             }
         };
 
-        document.addEventListener('pointerdown', handlePointerDown);
         document.addEventListener('keydown', handleKeyDown);
-        return () => {
-            document.removeEventListener('pointerdown', handlePointerDown);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [isMenuOpen]);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isMenuOpen, closeMenu]);
 
-    // 메뉴 옵션 클릭 핸들러
+    // 메뉴 항목 실행 (메뉴는 닫고 결과는 채팅에 표시)
     const handleMenuOptionClick = useCallback((run) => {
+        closeMenu();
         runAction(run);
+    }, [closeMenu, runAction]);
+
+    // 별도 화면으로 이동 (답변을 기다리는 중에도 가능)
+    const openPage = (path) => {
         setIsMenuOpen(false);
-    }, [runAction]);
+        navigate(path);
+    };
 
     const scrollToLatest = () => {
         const container = chatAreas.messages;
@@ -264,19 +347,28 @@ const ChatbotPage = () => {
         setHasNewMessage(false);
     };
 
-    // 로그아웃 (공용 기기를 고려해 이 기기의 대화 기록도 삭제)
-    const handleLogout = useCallback(async () => {
-        if (!window.confirm("로그아웃하면 이 기기에 저장된 대화 기록이 지워져요.\n로그아웃 하시겠어요?")) return;
+    // 로그아웃 확인 창 열기 (메뉴에서 호출)
+    const openLogoutDialog = () => {
+        setIsMenuOpen(false);
+        setLogoutDialog({ busy: false, error: '' });
+    };
 
+    const closeLogoutDialog = useCallback(() => {
+        setLogoutDialog(null);
+        menuButtonRef.current?.focus();
+    }, []);
+
+    // 로그아웃 (대화 기록은 이 기기에 남기고, 다른 계정으로 로그인할 때 삭제)
+    const handleLogout = useCallback(async () => {
+        setLogoutDialog({ busy: true, error: '' });
         try {
-            if (uid) clearChatHistory(uid);
             await signOut(auth);
             navigate('/', { replace: true });
         } catch (error) {
             console.error("로그아웃 실패: ", error);
-            alert("로그아웃하지 못했어요. 다시 시도해주세요.");
+            setLogoutDialog({ busy: false, error: '로그아웃하지 못했어요. 다시 시도해주세요.' });
         }
-    }, [navigate, uid]);
+    }, [navigate]);
 
     if (!chatbotConfig) {
         return (
@@ -290,141 +382,243 @@ const ChatbotPage = () => {
 
     return (
         <div className="chatbotPage_container">
-            <div className='chatbotPage_headerDiv'>
-                <div className="chatbotPage_titleGroup">
-                    <img src="/logo.png" alt="" className="chatbotPage_logo" />
-                    {/* 오늘/이번 달 지출 요약 (누르면 이번 달 요약 보기) */}
+            <header className="appHeader appHeader--centered">
+                <button
+                    type="button"
+                    ref={menuButtonRef}
+                    className="appHeader_iconButton"
+                    aria-label="메뉴 열기"
+                    aria-haspopup="dialog"
+                    aria-expanded={isMenuOpen}
+                    aria-controls="app-drawer"
+                    onClick={() => setIsMenuOpen(true)}
+                >
+                    <Menu size={24} aria-hidden="true" />
+                </button>
+                <h1 className="appHeader_title">
+                    <img src="/avatar.png" alt="" className="appHeader_logo" />
+                    MoneyChat
+                </h1>
+                {/* 제목이 정확히 가운데 오도록 메뉴 버튼과 같은 너비의 빈 칸 */}
+                <span className="appHeader_spacer" aria-hidden="true" />
+            </header>
+
+            <main className="chatbotPage_body">
+                {/* 오늘 / 이번 달 / 예산 요약 (각 칸을 누르면 해당 내용 보기) */}
+                <div className="summaryBar" role="group" aria-label="지출 현황">
                     <button
                         type="button"
-                        className="chatbotPage_stats"
-                        onClick={() => runAction((actions) => actions.handleMonthExpenses())}
-                        aria-label="이번 달 지출 요약 보기"
+                        className="summaryBar_item"
+                        onClick={() => runAction((actions) => actions.handleTodayExpenses())}
+                        disabled={isBusy}
                     >
-                        {stats ? (
+                        <span className="summaryBar_label">오늘</span>
+                        {stats
+                            ? <span className="summaryBar_value">{stats.today.toLocaleString()}원</span>
+                            : <span className="summaryBar_skeleton" aria-label="불러오는 중" />}
+                    </button>
+                    <button
+                        type="button"
+                        className="summaryBar_item"
+                        onClick={() => runAction((actions) => actions.handleMonthExpenses())}
+                        disabled={isBusy}
+                    >
+                        <span className="summaryBar_label">이번 달</span>
+                        {stats
+                            ? <span className="summaryBar_value">{stats.month.toLocaleString()}원</span>
+                            : <span className="summaryBar_skeleton" aria-label="불러오는 중" />}
+                    </button>
+                    <button
+                        type="button"
+                        className="summaryBar_item"
+                        onClick={() => runAction((actions) => actions.handleBudgetSetting())}
+                        disabled={isBusy}
+                    >
+                        <span className="summaryBar_label">{budgetStatus?.over ? '예산 초과' : '남은 예산'}</span>
+                        {!stats && <span className="summaryBar_skeleton" aria-label="불러오는 중" />}
+                        {stats && !budgetStatus && <span className="summaryBar_value summaryBar_value--action">설정하기</span>}
+                        {budgetStatus && (
                             <>
-                                <span className="chatbotPage_statsMain">오늘 <strong>{stats.today.toLocaleString()}원</strong></span>
-                                <span className={`chatbotPage_statsSub${budgetStatus?.over ? ' chatbotPage_statsOver' : ''}`}>
-                                    이번 달 {stats.month.toLocaleString()}원
-                                    {budgetStatus && (budgetStatus.over
-                                        ? ` · 예산 ${(-budgetStatus.remaining).toLocaleString()}원 초과`
-                                        : ` · 예산 ${budgetStatus.percent}% 사용`)}
+                                <span className={`summaryBar_value${budgetStatus.over ? ' summaryBar_value--over' : ''}`}>
+                                    {Math.abs(budgetStatus.remaining).toLocaleString()}원
                                 </span>
-                            </>
-                        ) : (
-                            <>
-                                <span className="chatbotPage_statsMain"><strong>머니챗</strong></span>
-                                <span className="chatbotPage_statsSub">지출 현황을 불러오는 중...</span>
+                                <span
+                                    className={`summaryBar_meter${budgetStatus.over ? ' summaryBar_meter--over' : budgetStatus.percent >= 80 ? ' summaryBar_meter--warn' : ''}`}
+                                    role="progressbar"
+                                    aria-label="예산 사용률"
+                                    aria-valuenow={Math.min(budgetStatus.percent, 100)}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                >
+                                    <span style={{ width: `${Math.min(budgetStatus.percent, 100)}%` }} />
+                                </span>
                             </>
                         )}
                     </button>
                 </div>
-                <button className="chatbotPage_logoutBtn" onClick={handleLogout}>
-                    로그아웃
-                </button>
-            </div>
 
-            {!isOnline && (
-                <div className="chatbotPage_offline" role="status">
-                    📡 오프라인 상태예요. 인터넷에 연결되면 다시 시도해주세요.
-                </div>
-            )}
-
-            <div
-                className={`chatbotPage_chatWrapper${isBusy ? ' chatbotPage_chatWrapper--busy' : ''}`}
-                ref={chatWrapperRef}
-            >
-                <Chatbot
-                    key={uid}
-                    config={chatbotConfig}
-                    messageParser={MessageParser}
-                    actionProvider={ActionProviderWrapper}
-                    headerText='MoneyChat'
-                    placeholderText={DEFAULT_PLACEHOLDER}
-                    disableScrollToBottom
-                />
-
-                {/* 입력창 왼쪽의 메뉴 버튼 (CSS order로 입력창 앞에 배치) */}
-                {chatAreas.input && createPortal(
-                    <button
-                        type="button"
-                        ref={menuButtonRef}
-                        className="custom-menu-button"
-                        title="메뉴 열기"
-                        aria-label="메뉴 열기"
-                        aria-haspopup="menu"
-                        aria-expanded={isMenuOpen}
-                        onClick={() => setIsMenuOpen((prev) => !prev)}
-                    >
-                        ☰
-                    </button>,
-                    chatAreas.input
-                )}
-
-                {/* 입력창 위 빠른 버튼 (CSS order로 메시지 영역과 입력창 사이에 배치) */}
-                {chatAreas.inner && createPortal(
-                    <div className="quick-actions" role="toolbar" aria-label="빠른 기능">
-                        {stats?.month === 0 && EXAMPLE_MESSAGES.map((text) => (
-                            <button
-                                key={text}
-                                type="button"
-                                className="quick-action quick-action-example"
-                                onClick={() => runAction((actions) => actions.sendUserMessage(text))}
-                            >
-                                💬 {text}
-                            </button>
-                        ))}
-                        {QUICK_ACTIONS.map((action) => (
-                            <button
-                                key={action.text}
-                                type="button"
-                                className="quick-action"
-                                onClick={() => runAction(action.run)}
-                            >
-                                {action.text}
-                            </button>
-                        ))}
-                    </div>,
-                    chatAreas.inner
-                )}
-
-                {/* 위쪽을 보고 있을 때 새 메시지가 오면 표시 */}
-                {hasNewMessage && (
-                    <button type="button" className="new-message-button" onClick={scrollToLatest}>
-                        ↓ 새 메시지
-                    </button>
-                )}
-
-                {/* 메뉴 드롭다운 */}
-                {isMenuOpen && (
-                    <div className="menu-dropdown" ref={menuRef}>
-                        <div className="menu-header">
-                            <span>💰 머니챗 메뉴</span>
-                            <button
-                                className="menu-close-button"
-                                onClick={() => {
-                                    setIsMenuOpen(false);
-                                    menuButtonRef.current?.focus();
-                                }}
-                                aria-label="메뉴 닫기"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="menu-options" role="menu">
-                            {MENU_OPTIONS.map((option) => (
-                                <button
-                                    key={option.text}
-                                    role="menuitem"
-                                    onClick={() => handleMenuOptionClick(option.run)}
-                                    className="menu-option-button"
-                                >
-                                    {option.text}
-                                </button>
-                            ))}
-                        </div>
+                {!isOnline && (
+                    <div className="chatbotPage_offline" role="status">
+                        <WifiOff size={16} aria-hidden="true" />
+                        오프라인 상태예요. 인터넷에 연결되면 다시 시도해주세요.
                     </div>
                 )}
-            </div>
+
+                <div
+                    className={`chatbotPage_chatWrapper${isBusy ? ' chatbotPage_chatWrapper--busy' : ''}`}
+                    ref={chatWrapperRef}
+                >
+                    <Chatbot
+                        key={uid}
+                        config={chatbotConfig}
+                        messageParser={MessageParser}
+                        actionProvider={ActionProviderWrapper}
+                        headerText='MoneyChat'
+                        placeholderText={DEFAULT_PLACEHOLDER}
+                        validator={validateInput}
+                        disableScrollToBottom
+                    />
+
+                    {/* 입력창 위 빠른 버튼 (CSS order로 메시지 영역과 입력창 사이에 배치) */}
+                    {chatAreas.inner && createPortal(
+                        <div
+                            ref={quickActionsRef}
+                            className={`quick-actions${quickScroll.left ? ' quick-actions--fade-left' : ''}${quickScroll.right ? ' quick-actions--fade-right' : ''}`}
+                            role="toolbar"
+                            aria-label="빠른 기능"
+                            onScroll={updateQuickScroll}
+                        >
+                            {showGuide && (
+                                <button
+                                    type="button"
+                                    className="quick-action quick-action-example"
+                                    onClick={() => runAction(GUIDE_ACTION.run)}
+                                    disabled={isBusy}
+                                >
+                                    <Lightbulb size={14} aria-hidden="true" />
+                                {GUIDE_ACTION.text}
+                                </button>
+                            )}
+                            {QUICK_ACTIONS.map((action) => (
+                                <button
+                                    key={action.text}
+                                    type="button"
+                                    className="quick-action"
+                                    onClick={() => runAction(action.run)}
+                                    disabled={isBusy}
+                                >
+                                    {action.text}
+                                </button>
+                            ))}
+                        </div>,
+                        chatAreas.inner
+                    )}
+
+                    {/* 위쪽을 보고 있을 때 새 메시지가 오면 표시 */}
+                    {hasNewMessage && (
+                        <button type="button" className="new-message-button" onClick={scrollToLatest}>
+                            <ArrowDown size={14} aria-hidden="true" />
+                            새 메시지
+                        </button>
+                    )}
+
+                </div>
+            </main>
+
+            {/* 왼쪽에서 열리는 슬라이드 메뉴 (닫혀 있을 때는 CSS로 숨겨 포커스되지 않음) */}
+            <div className={`drawer-backdrop${isMenuOpen ? ' is-open' : ''}`} onClick={closeMenu} aria-hidden="true" />
+            <aside
+                id="app-drawer"
+                ref={menuRef}
+                className={`drawer${isMenuOpen ? ' is-open' : ''}`}
+                role="dialog"
+                aria-modal="true"
+                aria-label="머니챗 메뉴"
+            >
+                <div className="drawer-header">
+                    <img src="/avatar.png" alt="" />
+                    <div className="drawer-profile">
+                        <strong>MoneyChat</strong>
+                        {email && <span>{email}</span>}
+                    </div>
+                    <button type="button" className="drawer-close" onClick={closeMenu} aria-label="메뉴 닫기">
+                        <X size={20} aria-hidden="true" />
+                    </button>
+                </div>
+
+                <nav className="drawer-body" aria-label="기능">
+                    {MENU_SECTIONS.map((section) => (
+                        <section
+                            key={section.id}
+                            className={`drawer-section drawer-section--${section.id}`}
+                            aria-labelledby={`drawer-section-${section.id}`}
+                        >
+                            <div className="drawer-section-header">
+                                <h2 id={`drawer-section-${section.id}`} className="drawer-section-title">
+                                    <section.TitleIcon size={14} aria-hidden="true" />
+                                    {section.title}
+                                </h2>
+                            </div>
+
+                            {section.groups.map((group) => (
+                                <div key={group.label || section.id} className="drawer-group" role="group" aria-label={group.label || section.title}>
+                                    {group.label && <h3 className="drawer-group-label">{group.label}</h3>}
+                                    {group.options.map((option) => (
+                                        <button
+                                            key={option.text}
+                                            type="button"
+                                            className="drawer-item"
+                                            onClick={() => (option.page ? openPage(option.page) : handleMenuOptionClick(option.run))}
+                                            disabled={isBusy && !option.page}
+                                        >
+                                            <option.Icon size={20} aria-hidden="true" />
+                                            {option.text}
+                                            {option.page && <ChevronRight className="drawer-item-trailing" size={18} aria-hidden="true" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            ))}
+
+                            {/* 채팅 기능은 답변을 기다리는 동안 쓸 수 없음 (페이지 이동은 가능) */}
+                            {section.id === 'chat' && isBusy && (
+                                <p className="drawer-busy-note">답변을 기다리는 중에는 쓸 수 없어요.</p>
+                            )}
+                        </section>
+                    ))}
+                </nav>
+
+                {/* 화면 설정과 로그아웃은 답변을 기다리는 중에도 가능 */}
+                <div className="drawer-footer">
+                    <button
+                        type="button"
+                        className="drawer-item"
+                        role="switch"
+                        aria-checked={theme === 'dark'}
+                        onClick={toggleTheme}
+                    >
+                        <Moon size={20} aria-hidden="true" />
+                        다크 모드
+                        <span className="drawer-switch" aria-hidden="true" />
+                    </button>
+                    <button type="button" className="drawer-item drawer-item-logout" onClick={openLogoutDialog}>
+                        <LogOut size={20} aria-hidden="true" />
+                        로그아웃
+                    </button>
+                </div>
+            </aside>
+
+            {logoutDialog && (
+                <ConfirmDialog
+                    title="로그아웃 하시겠어요?"
+                    message={"대화 기록은 기기당 한 계정만 저장됩니다.\n다른 계정으로 로그인 시, 이전 계정에 대한 기록은 지워집니다."}
+                    confirmText={logoutDialog.busy ? '로그아웃 중...' : '로그아웃'}
+                    danger
+                    busy={logoutDialog.busy}
+                    error={logoutDialog.error}
+                    onConfirm={handleLogout}
+                    onCancel={closeLogoutDialog}
+                />
+            )}
         </div>
     );
 };

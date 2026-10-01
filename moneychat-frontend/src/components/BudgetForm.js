@@ -1,7 +1,10 @@
 // moneychat-frontend/src/components/BudgetForm.js
-// 월 예산 설정 위젯 ('💰 예산 설정' 메뉴에서 표시)
+// 월 예산 설정 위젯 ('예산 설정' 메뉴에서 표시)
 import React, { useState } from 'react';
-import { toAmount } from '../chatbot/expenseUtils';
+import { toAmount, formatKoreanAmount } from '../chatbot/expenseUtils';
+
+// 자주 쓰는 예산 금액 (누르면 입력창에 채워짐)
+const BUDGET_PRESETS = [300000, 500000, 1000000];
 
 const BudgetForm = (props) => {
     const currentBudget = props.payload?.budget ?? null;
@@ -10,6 +13,8 @@ const BudgetForm = (props) => {
     const [error, setError] = useState('');
 
     if (isDone) return null;
+
+    const amount = toAmount(value);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -41,6 +46,20 @@ const BudgetForm = (props) => {
                 />
                 <span>원</span>
                 <button type="submit" className="chat-widget-form-primary">저장</button>
+            </div>
+            {amount !== null && <p className="amount-preview">{formatKoreanAmount(amount)}</p>}
+            <div className="chat-widget-form-presets">
+                {BUDGET_PRESETS.map((preset) => (
+                    <button
+                        key={preset}
+                        type="button"
+                        className="quick-action"
+                        aria-pressed={amount === preset}
+                        onClick={() => { setValue(String(preset)); setError(''); }}
+                    >
+                        {formatKoreanAmount(preset)}
+                    </button>
+                ))}
             </div>
             {currentBudget && (
                 <button type="button" className="chat-widget-form-link" onClick={handleClear}>예산 해제하기</button>

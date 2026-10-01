@@ -1,0 +1,651 @@
+/* ===== 지출 관리 페이지 ===== */
+.expensesPage {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    background-color: #edf2f7;
+}
+
+/* 헤더 오른쪽 '추가' 버튼 */
+.expensesPage_addButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 36px;
+    margin: 0 0.25rem 0 auto;
+    padding: 0 0.875rem 0 0.75rem;
+    border: none;
+    border-radius: 999px;
+    background-color: #2b6cb0;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.expensesPage_addButton:hover:not(:disabled) {
+    background-color: #2c5282;
+}
+
+.expensesPage_addButton:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.expensesPage_body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0.75rem 0.75rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* 월 이동 + 요약 */
+.expensesPage_summary {
+    padding: 0.75rem 1rem 1rem;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 0 0 1px #cbd5e0, 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.expensesPage_month {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 -0.5rem 0.5rem;
+}
+
+.expensesPage_monthTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* 이번 달로 돌아가기 */
+.expensesPage_thisMonth {
+    height: 26px;
+    padding: 0 0.625rem;
+    border: 1px solid #2b6cb0;
+    border-radius: 999px;
+    background: white;
+    color: #2b6cb0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.expensesPage_thisMonth:hover {
+    background-color: #ebf8ff;
+}
+
+.expensesPage_month h2 {
+    margin: 0;
+    color: #1a202c;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.expensesPage_month > button {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: #2d3748;
+    cursor: pointer;
+}
+
+.expensesPage_month > button:hover:not(:disabled) {
+    background-color: #edf2f7;
+}
+
+.expensesPage_month > button:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.expensesPage_total {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.expensesPage_totalLabel,
+.expensesPage_count {
+    color: #4a5568;
+    font-size: 0.8125rem;
+}
+
+.expensesPage_total strong {
+    color: #1a202c;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.expensesPage_total .summaryBar_skeleton {
+    width: 120px;
+    height: 1.5rem;
+}
+
+.expensesPage_budget {
+    margin-top: 0.75rem;
+}
+
+.expensesPage_budgetLabel {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: #4a5568;
+    font-size: 0.75rem;
+}
+
+.expensesPage_over {
+    color: #c53030;
+    font-weight: 600;
+}
+
+/* 필터 */
+.expensesPage_filters {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.expensesPage_search {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0 0.75rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    background-color: white;
+    color: #4a5568;
+}
+
+.expensesPage_search:focus-within {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+}
+
+.expensesPage_search input {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: none;
+    color: #1a202c;
+    font-size: 0.9375rem;
+}
+
+.expensesPage_filters select {
+    flex-shrink: 0;
+    max-width: 42%;
+    height: 42px;
+    padding: 0 0.5rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    background-color: white;
+    color: #1a202c;
+    font-size: 0.9375rem;
+}
+
+/* 불러오는 중 / 비어 있음 / 오류 */
+.expensesPage_message {
+    padding: 2.5rem 1rem;
+    color: #4a5568;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.expensesPage_message p {
+    margin: 0 0 0.75rem;
+}
+
+.expensesPage_message button {
+    min-height: 36px;
+    padding: 0 1rem;
+    border: 1px solid #2b6cb0;
+    border-radius: 999px;
+    background: white;
+    color: #2b6cb0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* 지출 표 */
+.expenseTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 0 0 1px #cbd5e0, 0 1px 3px rgba(0, 0, 0, 0.06);
+    font-size: 0.9375rem;
+    color: #1a202c;
+}
+
+.expenseTable th,
+.expenseTable td {
+    padding: 0.625rem 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.expenseTable th:first-child,
+.expenseTable td:first-child {
+    padding-left: 0.875rem;
+}
+
+.expenseTable th:last-child,
+.expenseTable td:last-child {
+    padding-right: 0.5rem;
+}
+
+.expenseTable thead th {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    /* 진한 바탕 + 흰 글자로 페이지 배경과 확실히 구분 */
+    border-bottom-color: #4a5568;
+    background-color: #4a5568;
+    color: #e2e8f0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.expenseTable thead th:first-child {
+    border-top-left-radius: 12px;
+}
+
+.expenseTable thead th:last-child {
+    border-top-right-radius: 12px;
+}
+
+/* 다음 행도 같은 날짜면 사이 구분선을 연하게 (같은 날 지출을 한 묶음으로 보이게) */
+.expenseTable tbody tr.expenseTable_row--dayContinues td {
+    border-bottom-color: #f1f5f9;
+}
+
+.expenseTable tbody tr:hover {
+    background-color: #f7fafc;
+}
+
+.expenseTable_sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.expenseTable_sort:hover,
+.expenseTable_sort.is-active {
+    color: white;
+}
+
+.expenseTable_sort.is-active {
+    font-weight: 700;
+}
+
+.expenseTable_date {
+    width: 1%;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* "9.30(수)": 요일은 날짜 바로 뒤에 회색으로 */
+.expenseTable_weekday {
+    margin-left: 0.0625rem;
+    color: #4a5568;
+    font-size: 0.8125rem;
+    font-weight: 400;
+}
+
+/* 카테고리 배지 + 내용 (한 줄, 내용이 길면 내용만 줄바꿈) */
+.expenseTable_subject {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.expenseTable_subject > span:last-child {
+    min-width: 0;
+    word-break: break-all;
+}
+
+.expenseTable_category {
+    flex-shrink: 0;
+    padding: 0.0625rem 0.4375rem;
+    border-radius: 999px;
+    background-color: #e2e8f0;
+    color: #2d3748;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.expenseTable_num {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.expenseTable thead .expenseTable_num .expenseTable_sort {
+    flex-direction: row-reverse;
+}
+
+.expenseTable_actions {
+    width: 4.5rem;
+    white-space: nowrap;
+    text-align: right !important;
+}
+
+.expenseTable_actions button {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: #4a5568;
+    cursor: pointer;
+}
+
+.expenseTable_actions button:hover:not(:disabled) {
+    background-color: #edf2f7;
+    color: #1a202c;
+}
+
+.expenseTable_actions button:disabled {
+    opacity: 0.4;
+    cursor: progress;
+}
+
+.expenseTable tfoot th,
+.expenseTable tfoot td {
+    border-top: 1px solid #4a5568;
+    border-bottom: none;
+    background-color: #4a5568;
+    color: white;
+    font-weight: 700;
+}
+
+/* 마지막 행 아래 선은 합계 행의 위쪽 선과 겹치지 않도록 제거 */
+.expenseTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.expenseTable tfoot th {
+    color: #e2e8f0;
+    font-size: 0.875rem;
+    border-bottom-left-radius: 12px;
+}
+
+.expenseTable tfoot td:last-child {
+    border-bottom-right-radius: 12px;
+}
+
+/* 지출 추가/수정 대화상자 */
+.expense-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.expense-form .confirm-dialog-title {
+    margin-bottom: 0.25rem;
+}
+
+.expense-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #4a5568;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.expense-form-field input,
+.expense-form-field select {
+    width: 100%;
+    height: 42px;
+    padding: 0 0.75rem;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    background-color: white;
+    color: #1a202c;
+    font-size: 0.9375rem;
+}
+
+.expense-form-field input:focus,
+.expense-form-field select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+}
+
+.expense-form-field .amount-preview {
+    margin: 0;
+}
+
+.expense-form .confirm-dialog-actions {
+    margin-top: 0.5rem;
+}
+
+/* iOS에서는 입력창 글자가 16px 미만이면 입력할 때 화면이 확대되므로 16px로 */
+@supports (-webkit-touch-callout: none) {
+    .expensesPage_search input,
+    .expensesPage_filters select,
+    .expense-form-field input,
+    .expense-form-field select {
+        font-size: 16px;
+    }
+}
+
+/* 하단 안내 (삭제 후 되돌리기 등) */
+.expensesPage_toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1rem;
+    transform: translateX(-50%);
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: calc(100% - 1.5rem);
+    max-width: 420px;
+    padding: 0.625rem 0.75rem 0.625rem 1rem;
+    box-sizing: border-box;
+    border-radius: 12px;
+    background-color: #2d3748;
+    color: white;
+    font-size: 0.875rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.expensesPage_toast span {
+    flex: 1;
+    min-width: 0;
+}
+
+.expensesPage_toast button {
+    flex-shrink: 0;
+    min-height: 32px;
+    padding: 0 0.5rem;
+    border: none;
+    background: none;
+    color: #90cdf4;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* 화면에는 보이지 않고 스크린 리더만 읽는 글자 */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ===== 다크 모드 ===== */
+[data-theme="dark"] .expensesPage {
+    background-color: #171c26;
+}
+
+[data-theme="dark"] .expensesPage_summary,
+[data-theme="dark"] .expenseTable {
+    background-color: #2d3748;
+    box-shadow: 0 0 0 1px #5a6578;
+}
+
+[data-theme="dark"] .expenseTable thead th {
+    border-bottom-color: #718096;
+    background-color: #3a4558;
+}
+
+[data-theme="dark"] .expenseTable tfoot th,
+[data-theme="dark"] .expenseTable tfoot td {
+    border-top-color: #718096;
+}
+
+[data-theme="dark"] .expenseTable tfoot th {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .expensesPage_month h2,
+[data-theme="dark"] .expensesPage_month > button,
+[data-theme="dark"] .expensesPage_total strong,
+[data-theme="dark"] .expenseTable,
+[data-theme="dark"] .expensesPage_search input,
+[data-theme="dark"] .expensesPage_filters select,
+[data-theme="dark"] .expense-form-field input,
+[data-theme="dark"] .expense-form-field select {
+    color: #edf2f7;
+}
+
+[data-theme="dark"] .expensesPage_month > button:hover:not(:disabled),
+[data-theme="dark"] .expenseTable_actions button:hover:not(:disabled) {
+    background-color: #4a5568;
+    color: #edf2f7;
+}
+
+[data-theme="dark"] .expensesPage_totalLabel,
+[data-theme="dark"] .expensesPage_count,
+[data-theme="dark"] .expensesPage_budgetLabel,
+[data-theme="dark"] .expensesPage_message,
+[data-theme="dark"] .expensesPage_search,
+[data-theme="dark"] .expenseTable thead th,
+[data-theme="dark"] .expenseTable_weekday,
+[data-theme="dark"] .expenseTable_actions button,
+[data-theme="dark"] .expenseTable tfoot th,
+[data-theme="dark"] .expense-form-field {
+    color: #a0aec0;
+}
+
+[data-theme="dark"] .expensesPage_over {
+    color: #feb2b2;
+}
+
+[data-theme="dark"] .expensesPage_search,
+[data-theme="dark"] .expensesPage_filters select,
+[data-theme="dark"] .expense-form-field input,
+[data-theme="dark"] .expense-form-field select {
+    border-color: #4a5568;
+    background-color: #1a202c;
+}
+
+[data-theme="dark"] .expenseTable th,
+[data-theme="dark"] .expenseTable td {
+    border-color: #4a5568;
+}
+
+[data-theme="dark"] .expenseTable tbody tr:hover {
+    background-color: #364152;
+}
+
+[data-theme="dark"] .expenseTable tfoot th,
+[data-theme="dark"] .expenseTable tfoot td {
+    background-color: #3a4558;
+}
+
+[data-theme="dark"] .expenseTable_sort.is-active {
+    color: #90cdf4;
+}
+
+[data-theme="dark"] .expenseTable_category {
+    background-color: #4a5568;
+    color: #f7fafc;
+}
+
+[data-theme="dark"] .expensesPage_search,
+[data-theme="dark"] .expensesPage_filters select,
+[data-theme="dark"] .expense-form-field input,
+[data-theme="dark"] .expense-form-field select {
+    border-color: #718096;
+}
+
+[data-theme="dark"] .expensesPage_message button {
+    border-color: #90cdf4;
+    background-color: transparent;
+    color: #90cdf4;
+}
+
+[data-theme="dark"] .expensesPage_toast {
+    background-color: #4a5568;
+}
+
+[data-theme="dark"] .expenseTable tbody tr.expenseTable_row--dayContinues td {
+    border-bottom-color: #3a4558;
+}
+
+[data-theme="dark"] .expensesPage_thisMonth {
+    border-color: #90cdf4;
+    background-color: transparent;
+    color: #90cdf4;
+}
+
+[data-theme="dark"] .expensesPage_thisMonth:hover {
+    background-color: #2a4365;
+}
+
+/* 표 머리글·합계 행 다크 모드 (위의 다크 모드 글자색 규칙보다 뒤에 있어야 적용됨) */
+[data-theme="dark"] .expenseTable thead th,
+[data-theme="dark"] .expenseTable tfoot th,
+[data-theme="dark"] .expenseTable tfoot td {
+    border-color: #4a5568;
+    background-color: #4a5568;
+    color: #edf2f7;
+}
+
+[data-theme="dark"] .expenseTable_sort:hover,
+[data-theme="dark"] .expenseTable_sort.is-active {
+    color: white;
+}

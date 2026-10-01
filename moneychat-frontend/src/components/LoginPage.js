@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { auth } from '../firebase/firebaseConfig';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'; // 모듈식으로 가져옴
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getAuthErrorMessage } from '../authErrors';
 import PasswordInput from './PasswordInput';
 import '../styles/LoginPage.css';
@@ -64,15 +64,19 @@ const LoginPage = () => {
         }
     };
 
-    // 로그인 상태 확인 중에는 로그인 폼이 잠깐 보였다 사라지지 않도록 비워둠
+    // 로그인 상태 확인 중에는 로그인 폼이 잠깐 보였다 사라지지 않도록 로고만 표시
     if (isCheckingAuth) {
-        return <div className='LoginPage_container' />;
+        return (
+            <div className='LoginPage_container'>
+                <img src="/avatar-large.png" alt="MoneyChat 불러오는 중" className="auth_logo LoginPage_splashLogo" />
+            </div>
+        );
     }
 
     return (
         <div className='LoginPage_container'>
             <div className='LoginPage_subContainer'>
-                <img src="/logo.png" alt="MoneyChat" className="auth_logo" />
+                <img src="/avatar-large.png" alt="MoneyChat" className="auth_logo" />
                 <h2 style={{ marginTop: '0' }}>MoneyChat</h2>
                 <h5 style={{ marginTop: '0' }}>머니챗과 함께 쉽고 빠르게 지출을 기록해보세요!</h5>
                 <form onSubmit={handleLogin} className='LoginPage_LoginForm'>
@@ -104,10 +108,12 @@ const LoginPage = () => {
                         {isLoading ? '로그인 중...' : '로그인'}
                     </button>
                 </form>
-                <button className='LoginPage_signupBtn' onClick={() => navigate('/signup')}>회원가입</button>
                 <button className='LoginPage_resetBtn' type="button" onClick={handlePasswordReset}>
                     비밀번호를 잊으셨나요?
                 </button>
+                <p className='LoginPage_signupText'>
+                    계정이 없으신가요? <Link to="/signup" className='LoginPage_signupLink'>회원가입</Link>
+                </p>
             </div>
         </div>
     );

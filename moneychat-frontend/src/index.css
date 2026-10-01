@@ -1,10 +1,20 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui,
+    'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 버튼, 입력창은 기본적으로 폰트를 물려받지 않으므로 지정 (챗봇 라이브러리의 Arial 지정도 덮어씀) */
+button,
+input,
+select,
+textarea,
+.react-chatbot-kit-chat-container,
+.react-chatbot-kit-chat-input {
+  font-family: inherit;
 }
 
 code {
@@ -14,14 +24,15 @@ code {
 
 /* ===== 로그인/회원가입 공통 ===== */
 
-/* 로고: 정사각형으로 맞추고 이미지 가장자리의 흐린 원 테두리가 보이지 않도록 살짝 잘라냄 */
+/* 로고: 원형 (로봇이 꽉 차도록 잘라 둔 avatar-large.png 사용) */
 .auth_logo {
   width: 40%;
+  max-width: 128px;
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 50%;
-  clip-path: circle(47%);
   background-color: white;
+  box-shadow: 0 0 0 1px #cbd5e0;
 }
 
 /* 비밀번호 입력창 + 보기/숨기기 버튼 */
@@ -45,7 +56,7 @@ code {
   border: none;
   border-radius: 6px;
   background: none;
-  color: #718096;
+  color: #4a5568;
   font-size: 0.8125rem;
   cursor: pointer;
 }
@@ -55,44 +66,206 @@ code {
 }
 
 /* ===== 다크 모드 (로그인/회원가입) ===== */
-@media (prefers-color-scheme: dark) {
-  body {
+[data-theme="dark"] body {
     background-color: #1a202c;
-  }
+}
 
-  .LoginPage_container,
-  .SignupPage_container {
+[data-theme="dark"] .LoginPage_container,
+[data-theme="dark"] .SignupPage_container {
     background: linear-gradient(135deg, #1a202c 0%, #2a3448 100%) !important;
-  }
+}
 
-  .LoginPage_subContainer,
-  .SignupPage_subContainer {
+[data-theme="dark"] .LoginPage_subContainer,
+[data-theme="dark"] .SignupPage_subContainer {
     background-color: #2d3748 !important;
-  }
+}
 
-  .LoginPage_subContainer h2,
-  .SignupPage_subContainer h2 {
+[data-theme="dark"] .LoginPage_subContainer h2,
+[data-theme="dark"] .SignupPage_subContainer h2 {
     color: #edf2f7 !important;
-  }
+}
 
-  .LoginPage_subContainer h5 {
+[data-theme="dark"] .LoginPage_subContainer h5 {
     color: #a0aec0 !important;
-  }
+}
 
-  .LoginPage_email,
-  .LoginPage_password,
-  .SignupPage_input {
+[data-theme="dark"] .LoginPage_email,
+[data-theme="dark"] .LoginPage_password,
+[data-theme="dark"] .SignupPage_input {
     background-color: #1a202c;
-    border-color: #4a5568 !important;
+    border-color: #718096 !important;
     color: #edf2f7;
-  }
+}
 
-  .password-input-toggle,
-  .LoginPage_resetBtn {
+[data-theme="dark"] .password-input-toggle,
+[data-theme="dark"] .LoginPage_resetBtn,
+[data-theme="dark"] .LoginPage_signupText {
     color: #a0aec0 !important;
-  }
+}
 
-  .password-input-toggle:hover {
+[data-theme="dark"] .LoginPage_signupLink,
+[data-theme="dark"] .SignupPage_loginLink {
+    color: #90cdf4 !important;
+}
+
+[data-theme="dark"] .LoginPage_error,
+[data-theme="dark"] .SignupPage_error {
+    color: #feb2b2 !important;
+}
+
+[data-theme="dark"] .LoginPage_info {
+    color: #90cdf4 !important;
+}
+
+[data-theme="dark"] .password-input-toggle:hover {
     background-color: #4a5568;
-  }
+}
+
+/* ===== 새 버전 업데이트 안내 배너 ===== */
+.update-banner {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: calc(100% - 1.5rem);
+  max-width: 420px;
+  padding: 0.625rem 0.75rem 0.625rem 1rem;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background-color: #2d3748;
+  color: white;
+  font-size: 0.875rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.update-banner > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.update-banner-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.update-banner-actions button {
+  min-height: 36px;
+  padding: 0 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: #e2e8f0;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.update-banner-actions .update-banner-primary {
+  background-color: #90cdf4;
+  color: #1a202c;
+  font-weight: 600;
+}
+
+/* ===== 확인 대화상자 ===== */
+.confirm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background-color: rgba(26, 32, 44, 0.5);
+}
+
+.confirm-dialog {
+  width: 100%;
+  max-width: 320px;
+  padding: 1.25rem;
+  border-radius: 12px;
+  background-color: white;
+  color: #2d3748;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-dialog-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.0625rem;
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  /* 문구 안의 줄바꿈(\n) 표시 */
+  white-space: pre-line;
+  color: #4a5568;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.confirm-dialog-error {
+  margin: 0.75rem 0 0;
+  color: #c53030;
+  font-size: 0.8125rem;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.confirm-dialog-actions button {
+  min-height: 40px;
+  padding: 0 1rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  background-color: white;
+  color: #2d3748;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.confirm-dialog-actions button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.confirm-dialog-actions .confirm-dialog-primary {
+  border-color: #2b6cb0;
+  background-color: #2b6cb0;
+  color: white;
+}
+
+.confirm-dialog-actions .confirm-dialog-danger {
+  border-color: #c53030;
+  background-color: #c53030;
+  color: white;
+}
+
+[data-theme="dark"] .confirm-dialog {
+    background-color: #2d3748;
+    color: #edf2f7;
+}
+
+[data-theme="dark"] .confirm-dialog-message {
+    color: #cbd5e0;
+}
+
+[data-theme="dark"] .confirm-dialog-error {
+    color: #feb2b2;
+}
+
+[data-theme="dark"] .confirm-dialog-actions button {
+    border-color: #718096;
+    background-color: #1a202c;
+    color: #edf2f7;
+}
+
+[data-theme="dark"] .update-banner {
+    background-color: #4a5568;
 }

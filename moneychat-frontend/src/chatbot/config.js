@@ -1,17 +1,17 @@
 import { createChatBotMessage } from 'react-chatbot-kit';
 import UndoExpenseButton from '../components/UndoExpenseButton';
 import RetryMessageButton from '../components/RetryMessageButton';
-import ExpenseManager from '../components/ExpenseManager';
+import ExpenseTableLink from '../components/ExpenseTableLink';
 import BudgetForm from '../components/BudgetForm';
 import DateDivider from '../components/DateDivider';
 import { toChatMessageFields } from '../components/MessageContent';
 import { getMessageText, withDateDividers, DATE_DIVIDER_TYPE } from './messageFormat';
 
 const GREETING =
-  "안녕하세요! 저는 당신의 지출 관리를 도와드릴 '머니챗'입니다. 💰\n\n" +
+  "안녕하세요! 저는 당신의 지출 관리를 도와드릴 '머니챗'입니다.\n\n" +
   "오늘 지출하신 내용을 편하게 알려주세요!\n" +
-  "예) \"점심 8000\", \"어제 택시 12000 커피 4500\"\n\n" +
-  "\"이번 주 얼마 썼어?\"처럼 물어보셔도 되고, 입력창 왼쪽의 메뉴 버튼(☰)으로 다양한 기능을 이용하실 수 있어요!";
+  "예) \"커피 5000\", \"어제 택시 12000 커피 4500\"\n\n" +
+  "\"이번 주 얼마 썼어?\"처럼 물어보셔도 되고, 왼쪽 위 메뉴 버튼에서 다양한 기능을 이용하실 수 있어요!";
 
 const createGreeting = () => {
   const { message, ...fields } = toChatMessageFields(GREETING, Date.now(), { formatted: true });
@@ -50,8 +50,8 @@ export const createConfig = (history = []) => {
         widgetFunc: (props) => <RetryMessageButton {...props} />,
       },
       {
-        widgetName: "expenseManager",
-        widgetFunc: (props) => <ExpenseManager {...props} />,
+        widgetName: "expenseTableLink",
+        widgetFunc: (props) => <ExpenseTableLink {...props} />,
       },
       {
         widgetName: "budgetForm",
@@ -65,8 +65,10 @@ export const createConfig = (history = []) => {
 
     customComponents: {
       botAvatar: () => (
-        <img src="/logo.png" alt="MoneyChat" className="chatbot-avatar-img" />
-      )
+        <img src="/avatar.png" alt="MoneyChat" className="chatbot-avatar-img" />
+      ),
+      // 내 메시지에는 프로필을 표시하지 않음
+      userAvatar: () => null,
     },
   };
 };

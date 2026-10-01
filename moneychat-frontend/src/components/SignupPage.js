@@ -56,7 +56,7 @@ const SignupPage = () => {
   return (
     <div className="SignupPage_container">
       <div className="SignupPage_subContainer">
-        <img src="/logo.png" alt="MoneyChat" className="auth_logo" />
+        <img src="/avatar-large.png" alt="MoneyChat" className="auth_logo" />
         <h2 style={{ marginTop: '0' }}>MoneyChat 회원가입</h2>
         <form onSubmit={handleSignup} className="SignupPage_form">
           <input
